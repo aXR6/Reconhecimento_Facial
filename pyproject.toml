@@ -20,6 +20,10 @@ dependencies = [
     "huggingface_hub",
     "python-dotenv",
     "numpy",
+    "flask",
+    "questionary",
+    "face_recognition; platform_system != 'Windows'",  # optional
+    "psycopg2-binary",
 ]
 
 [project.scripts]

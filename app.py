@@ -3,28 +3,34 @@ import logging
 import os
 
 from dotenv import load_dotenv
+import questionary
 
 load_dotenv()
 
 from face_detection import detect_faces
 from llm_service import generate_caption
 from obstruction_detection import detect_obstruction
+from recognition import register_person
 
 logger = logging.getLogger(__name__)
 
 
 def menu() -> None:
+    options = [
+        "Detectar rostos (OpenCV)",
+        "Detectar rostos com MediaPipe",
+        "Detectar rostos com YOLOv8",
+        "Gerar legenda via LLM",
+        "Detectar obstru\u00e7\u00e3o facial",
+        "Cadastrar pessoa",
+        "Sair",
+    ]
     while True:
-        print("\n=== Menu ===")
-        print("1 - Detectar rostos (OpenCV)")
-        print("2 - Detectar rostos com MediaPipe (HuggingFace)")
-        print("3 - Detectar rostos com YOLOv8 (HuggingFace)")
-        print("4 - Gerar legenda via LLM")
-        print("5 - Detectar obstru\u00e7\u00e3o facial")
-        print("0 - Sair")
-        choice = input("Escolha uma opcao: ").strip()
+        choice = questionary.select("Escolha uma opcao", choices=options).ask()
+        if choice is None:
+            break
 
-        if choice == "1":
+        if choice == options[0]:
             image = input("Caminho da imagem: ").strip()
             output = input("Arquivo de saida [output.jpg]: ").strip() or "output.jpg"
             try:
@@ -32,7 +38,7 @@ def menu() -> None:
                 print(f"Detectado(s) {qtd} rosto(s). Resultado salvo em {output}")
             except Exception as exc:
                 print(f"Erro: {exc}")
-        elif choice == "2":
+        elif choice == options[1]:
             image = input("Caminho da imagem: ").strip()
             output = input("Arquivo de saida [output.jpg]: ").strip() or "output.jpg"
             try:
@@ -40,7 +46,7 @@ def menu() -> None:
                 print(f"Detectado(s) {qtd} rosto(s). Resultado salvo em {output}")
             except Exception as exc:
                 print(f"Erro: {exc}")
-        elif choice == "3":
+        elif choice == options[2]:
             image = input("Caminho da imagem: ").strip()
             output = input("Arquivo de saida [output.jpg]: ").strip() or "output.jpg"
             try:
@@ -48,21 +54,26 @@ def menu() -> None:
                 print(f"Detectado(s) {qtd} rosto(s). Resultado salvo em {output}")
             except Exception as exc:
                 print(f"Erro: {exc}")
-        elif choice == "4":
+        elif choice == options[3]:
             image = input("Caminho da imagem: ").strip()
             try:
                 caption = generate_caption(image)
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")
-        elif choice == "5":
+        elif choice == options[4]:
             image = input("Caminho da imagem: ").strip()
             try:
                 label = detect_obstruction(image)
                 print(f"Obstru\u00e7\u00e3o detectada: {label}")
             except Exception as exc:
                 print(f"Erro: {exc}")
-        elif choice == "0":
+        elif choice == options[5]:
+            image = input("Imagem da pessoa: ").strip()
+            name = input("Nome da pessoa: ").strip()
+            register_person(name, image)
+            print("Pessoa cadastrada")
+        elif choice == options[6]:
             break
         else:
             print("Opcao invalida")
