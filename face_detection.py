@@ -10,8 +10,13 @@ def detect_faces(
     image_path: str,
     output_path: str = "output.jpg",
     use_hf: bool = False,
+    hf_model: str = "mediapipe",
 ) -> int:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
+
+    Se ``use_hf`` for ``True``, envia a imagem para a API de inferência da
+    Hugging Face. O parâmetro ``hf_model`` pode ser ``"mediapipe"`` ou
+    ``"yolov8"``.
 
     Retorna o número de rostos encontrados.
     """
@@ -32,10 +37,16 @@ def detect_faces(
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     if use_hf:
-        url = os.getenv(
-            "HF_FACE_DETECTION_URL",
-            "https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection",
-        )
+        if hf_model == "yolov8":
+            url = os.getenv(
+                "HF_YOLOV8_URL",
+                "https://api-inference.huggingface.co/models/arnabdhar/YOLOv8-Face-Detection",
+            )
+        else:
+            url = os.getenv(
+                "HF_MEDIAPIPE_URL",
+                "https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection",
+            )
         headers = {}
         with open(image_path, "rb") as f:
             data = f.read()
@@ -65,12 +76,18 @@ def main() -> None:
     parser.add_argument(
         "--hf",
         action="store_true",
-        help="Utiliza o modelo MediaPipe-Face-Detection da Hugging Face",
+        help="Utiliza modelo da Hugging Face (ver --model)",
+    )
+    parser.add_argument(
+        "--model",
+        choices=["mediapipe", "yolov8"],
+        default="mediapipe",
+        help="Modelo a ser usado com --hf",
     )
     args = parser.parse_args()
 
     try:
-        qtd = detect_faces(args.image, args.output, use_hf=args.hf)
+        qtd = detect_faces(args.image, args.output, use_hf=args.hf, hf_model=args.model)
     except FileNotFoundError as exc:
         print(exc)
         return
