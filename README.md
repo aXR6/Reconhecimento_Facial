@@ -11,6 +11,7 @@ da Hugging Face via API.
 - opencv-python (pode ser instalado com `pip install opencv-python`)
 - requests
 - huggingface_hub
+- python-dotenv
 
 ## Uso
 
@@ -31,6 +32,10 @@ da Hugging Face via API.
    ```
    python3 app.py
    ```
-   Para utilizar a geração de legenda é necessário definir a variável de
-   ambiente `HUGGINGFACE_TOKEN` com um token válido da Hugging Face.
+   Antes de executar, crie um arquivo `.env` na raiz com o conteúdo:
+   ```
+   HUGGINGFACE_TOKEN=seu_token_aqui
+   HF_API_URL=https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning
+   ```
+   O token é obrigatório para a geração de legendas via API da Hugging Face.
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
