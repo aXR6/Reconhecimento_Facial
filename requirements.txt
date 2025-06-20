@@ -6,3 +6,7 @@ transformers
 huggingface_hub
 python-dotenv
 numpy
+flask
+questionary
+face_recognition; platform_system != 'Windows'
+psycopg2-binary

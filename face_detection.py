@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import Optional
+from typing import Optional, Tuple, List, Dict
 
 try:
     from dotenv import load_dotenv
@@ -33,15 +33,24 @@ def detect_faces(
     output_path: str = "output.jpg",
     use_hf: bool = False,
     hf_model: str = "mediapipe",
-) -> int:
+    *,
+    scale: float = 1.1,
+    min_neighbors: int = 5,
+    min_size: Tuple[int, int] = (30, 30),
+    show: bool = False,
+    blur: bool = False,
+    as_json: bool = False,
+    save_db: bool = False,
+    recognized: Optional[List[str]] = None,
+) -> int | Dict[str, List[int]]:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
     Se ``use_hf`` for ``True``, utiliza modelos da Hugging Face localmente
     (``mediapipe`` ou ``yolov8``) para complementar a detecção.
 
-    Retorna o número total de rostos encontrados, somando as
-    detecções do Haar Cascade e dos modelos da Hugging Face
-    quando ``use_hf`` for ``True``.
+    Retorna o número total de rostos ou um dicionário com boxes quando
+    ``as_json`` for ``True``. Pode desfocar as faces, exibir a imagem e
+    salvar o resultado em um banco PostgreSQL.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -53,12 +62,19 @@ def detect_faces(
     face_cascade = cv2.CascadeClassifier(cascade_path)
 
     faces = face_cascade.detectMultiScale(
-        gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+        gray, scaleFactor=scale, minNeighbors=min_neighbors, minSize=min_size
     )
     total_faces = len(faces)
 
+    boxes = []
     for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        if blur:
+            roi = img[y : y + h, x : x + w]
+            roi = cv2.GaussianBlur(roi, (99, 99), 30)
+            img[y : y + h, x : x + w] = roi
+        else:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        boxes.append([int(x), int(y), int(w), int(h)])
 
     if use_hf:
         if hf_model == "yolov8":
@@ -71,7 +87,13 @@ def detect_faces(
                 results = yolo(img, verbose=False)[0]
                 for box in results.boxes.xyxy.cpu().numpy():
                     x1, y1, x2, y2 = map(int, box[:4])
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    if blur:
+                        roi = img[y1:y2, x1:x2]
+                        roi = cv2.GaussianBlur(roi, (99, 99), 30)
+                        img[y1:y2, x1:x2] = roi
+                    else:
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    boxes.append([int(x1), int(y1), int(x2 - x1), int(y2 - y1)])
                 total_faces += len(results.boxes)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Falha ao usar modelo YOLOv8: %s", exc)
@@ -90,18 +112,93 @@ def detect_faces(
                         y = int(box.ymin * img.shape[0])
                         w = int(box.width * img.shape[1])
                         h = int(box.height * img.shape[0])
-                        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                        if blur:
+                            roi = img[y:y + h, x:x + w]
+                            roi = cv2.GaussianBlur(roi, (99, 99), 30)
+                            img[y:y + h, x:x + w] = roi
+                        else:
+                            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                        boxes.append([int(x), int(y), int(w), int(h)])
                     total_faces += len(res.detections)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Falha ao usar modelo MediaPipe: %s", exc)
 
+    if recognized is None:
+        try:
+            from recognition import recognize_faces
+            recognized = recognize_faces(image_path)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Falha ao reconhecer rostos: %s", exc)
+            recognized = []
+
+    if show:
+        cv2.imshow("faces", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     cv2.imwrite(output_path, img)
+
+    result = {"boxes": boxes, "count": total_faces}
+    if save_db:
+        try:
+            from db import save_detection
+            save_detection(image_path, total_faces, recognized=";".join(recognized or []), result_json=result)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Falha ao salvar no banco: %s", exc)
+
+    if as_json:
+        return result
     return total_faces
+
+
+def detect_faces_video(
+    source: int | str = 0,
+    output_path: str = "out.mp4",
+    use_hf: bool = False,
+    hf_model: str = "mediapipe",
+    show: bool = False,
+    blur: bool = False,
+) -> None:
+    cap = cv2.VideoCapture(source)
+    writer = None
+    if output_path:
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        fps = cap.get(cv2.CAP_PROP_FPS) or 24
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        tmp = "_tmp_frame.jpg"
+        cv2.imwrite(tmp, frame)
+        res = detect_faces(
+            tmp,
+            tmp,
+            use_hf=use_hf,
+            hf_model=hf_model,
+            show=False,
+            blur=blur,
+            as_json=False,
+        )
+        processed = cv2.imread(tmp)
+        if writer:
+            writer.write(processed)
+        if show:
+            cv2.imshow("video", processed)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+    cap.release()
+    if writer:
+        writer.release()
+    cv2.destroyAllWindows()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Detecta rostos em uma imagem.")
-    parser.add_argument("--image", required=True, help="Caminho da imagem de entrada")
+    parser.add_argument("--image", help="Caminho da imagem de entrada")
+    parser.add_argument("--video", help="Arquivo de vídeo a processar")
+    parser.add_argument("--camera", action="store_true", help="Usa webcam")
     parser.add_argument(
         "--output", default="output.jpg", help="Arquivo de saída com detecções"
     )
@@ -116,16 +213,46 @@ def main() -> None:
         default="mediapipe",
         help="Modelo a ser usado com --hf",
     )
+    parser.add_argument("--show", action="store_true", help="Exibe imagem")
+    parser.add_argument("--blur", action="store_true", help="Desfoca faces")
+    parser.add_argument("--json", action="store_true", help="Retorna JSON")
+    parser.add_argument("--save-db", action="store_true", help="Salva resultado no banco")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
     try:
-        qtd = detect_faces(args.image, args.output, use_hf=args.hf, hf_model=args.model)
+        if args.video or args.camera:
+            src = 0 if args.camera else args.video
+            detect_faces_video(
+                src,
+                args.output,
+                use_hf=args.hf,
+                hf_model=args.model,
+                show=args.show,
+                blur=args.blur,
+            )
+            qtd = None
+        else:
+            qtd = detect_faces(
+                args.image,
+                args.output,
+                use_hf=args.hf,
+                hf_model=args.model,
+                show=args.show,
+                blur=args.blur,
+                as_json=args.json,
+                save_db=args.save_db,
+            )
     except FileNotFoundError as exc:
         logger.error(exc)
         return
 
-    logger.info("Detectado(s) %s rosto(s). Resultado salvo em %s", qtd, args.output)
+    if qtd is None:
+        logger.info("Processamento de vídeo finalizado")
+    elif isinstance(qtd, dict):
+        print(qtd)
+    else:
+        logger.info("Detectado(s) %s rosto(s). Resultado salvo em %s", qtd, args.output)
 
 
 if __name__ == "__main__":

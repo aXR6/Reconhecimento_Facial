@@ -8,6 +8,17 @@ Também é possível gerar uma legenda da imagem utilizando um modelo de linguag
 O projeto inclui uma interface de linha de comando unificada e testes automatizados com `pytest`. Modelos alternativos podem ser definidos pelas variáveis de ambiente `MEDIAPIPE_REPO`, `YOLOV8_REPO`, `HF_CAPTION_MODEL` e `OBSTRUCTION_MODEL_REPO`.
 Todas essas variáveis podem ser configuradas em um arquivo `.env` na raiz do projeto e serão carregadas automaticamente.
 
+Agora a aplicação também oferece:
+
+- Processamento de vídeos ou webcam com `--video` ou `--camera`.
+- Reconhecimento facial com cadastro de pessoas.
+- Classificação de emoções.
+- Opção de desfocar rostos para privacidade.
+- Resultados gravados em banco PostgreSQL (configurável pela variável `POSTGRES_DSN`).
+- Interface web em Flask (`web_app.py`).
+- Dockerfile para facilitar a execução.
+- Menu interativo mais elegante usando `questionary`.
+
 Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 
 ## Variáveis de ambiente
