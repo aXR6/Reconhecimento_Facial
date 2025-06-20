@@ -36,12 +36,8 @@ def menu() -> None:
                 print(f"Erro: {exc}")
         elif choice == "3":
             image = input("Caminho da imagem: ").strip()
-            token = os.getenv("HUGGINGFACE_TOKEN")
-            if not token:
-                print("Defina a variavel de ambiente HUGGINGFACE_TOKEN com seu token.")
-                continue
             try:
-                caption = generate_caption(image, token)
+                caption = generate_caption(image)
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")

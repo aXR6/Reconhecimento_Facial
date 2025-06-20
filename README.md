@@ -35,9 +35,6 @@ da Hugging Face via API.
    ```
    Antes de executar, crie um arquivo `.env` na raiz com o conteúdo:
    ```
-   HUGGINGFACE_TOKEN=seu_token_aqui
-   HF_API_URL=https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning
    HF_FACE_DETECTION_URL=https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection
    ```
-   O token é obrigatório para as chamadas de API da Hugging Face, tanto para gerar legendas quanto para a detecção de rostos.
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
