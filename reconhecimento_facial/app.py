@@ -3,6 +3,13 @@ import logging
 import os
 import time
 
+if __package__ is None or __package__ == "":
+    import pathlib
+    import sys
+
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    __package__ = "reconhecimento_facial"
+
 from dotenv import load_dotenv
 import questionary
 
