@@ -7,6 +7,13 @@ from importlib.util import find_spec
 import cv2
 import os
 
+if __package__ is None or __package__ == "":
+    import pathlib
+    import sys as _sys
+
+    _sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    __package__ = "reconhecimento_facial"
+
 
 def _patch_face_recognition_models() -> None:
     """Replace the face_recognition_models package to avoid deprecated

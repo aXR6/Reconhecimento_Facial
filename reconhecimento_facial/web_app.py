@@ -1,4 +1,12 @@
 from flask import Flask, request, jsonify
+
+if __package__ is None or __package__ == "":
+    import pathlib
+    import sys
+
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    __package__ = "reconhecimento_facial"
+
 from reconhecimento_facial.face_detection import detect_faces
 from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
