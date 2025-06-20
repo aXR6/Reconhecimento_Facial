@@ -73,8 +73,10 @@ def menu() -> None:
         elif choice == options[5]:
             name = input("Nome da pessoa: ").strip()
             try:
-                register_person_webcam(name)
-                print("Pessoa cadastrada")
+                if register_person_webcam(name):
+                    print("Pessoa cadastrada")
+                else:
+                    print("Erro ao capturar imagem da webcam")
             except Exception as exc:
                 print(f"Erro ao cadastrar: {exc}")
         elif choice == options[6]:
