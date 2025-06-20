@@ -55,6 +55,7 @@ O programa principal (`app.py`) apresenta três categorias principais:
 - Processamento de vídeos ou webcam.
 - Cadastro de pessoas e reconhecimento em tempo real.
 - Detecção de obstrução facial e classificação de emoções.
+- Detecção de sexo, idade, etnia e cor de pele na webcam.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - Interface web em Flask e Dockerfile para facilitar a execução.
@@ -68,6 +69,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `EMOTION_MODEL_REPO`: modelo de classificação de emoções (padrão: `nateraw/fer-vit-base`).
+- `DEMOGRAPHICS_MODEL_REPO`: modelo para estimar sexo, idade e etnia (padrão: `nateraw/age-gender-estimation`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
 ## Requisitos

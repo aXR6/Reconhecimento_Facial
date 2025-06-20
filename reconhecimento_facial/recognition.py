@@ -54,6 +54,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     face_recognition = None
 
 from reconhecimento_facial.db import get_conn, init_db
+from reconhecimento_facial.demographics_detection import detect_demographics
 
 logger = logging.getLogger(__name__)
 
@@ -196,9 +197,30 @@ def recognize_webcam() -> None:
                 if dists[best] < 0.6:
                     name = known_names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            crop = frame[top:bottom, left:right]
+            info = ""
+            try:
+                dem = detect_demographics(crop)
+                gender = dem.get("gender")
+                age = dem.get("age")
+                ethnicity = dem.get("ethnicity")
+                skin = dem.get("skin")
+                parts = [name]
+                if gender:
+                    parts.append(gender)
+                if age:
+                    parts.append(age)
+                if ethnicity:
+                    parts.append(ethnicity)
+                if skin:
+                    parts.append(skin)
+                info = ", ".join(parts)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("demographics error: %s", exc)
+                info = name
             cv2.putText(
                 frame,
-                name,
+                info,
                 (left, top - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
