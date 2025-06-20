@@ -8,6 +8,7 @@ load_dotenv()
 
 from face_detection import detect_faces
 from llm_service import generate_caption
+from obstruction_detection import detect_obstruction
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ def menu() -> None:
         print("2 - Detectar rostos com MediaPipe (HuggingFace)")
         print("3 - Detectar rostos com YOLOv8 (HuggingFace)")
         print("4 - Gerar legenda via LLM")
+        print("5 - Detectar obstru\u00e7\u00e3o facial")
         print("0 - Sair")
         choice = input("Escolha uma opcao: ").strip()
 
@@ -53,6 +55,13 @@ def menu() -> None:
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")
+        elif choice == "5":
+            image = input("Caminho da imagem: ").strip()
+            try:
+                label = detect_obstruction(image)
+                print(f"Obstru\u00e7\u00e3o detectada: {label}")
+            except Exception as exc:
+                print(f"Erro: {exc}")
         elif choice == "0":
             break
         else:
@@ -77,6 +86,9 @@ def main() -> None:
     cap_p = sub.add_parser("caption", help="Gerar legenda")
     cap_p.add_argument("--image", required=True)
 
+    obs_p = sub.add_parser("obstruction", help="Detectar obstru\u00e7\u00e3o facial")
+    obs_p.add_argument("--image", required=True)
+
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
@@ -100,6 +112,13 @@ def main() -> None:
             logger.error("Erro ao gerar legenda: %s", exc)
             return
         print(caption)
+    elif args.cmd == "obstruction":
+        try:
+            label = detect_obstruction(args.image)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Erro ao detectar obstru\u00e7\u00e3o: %s", exc)
+            return
+        print(label)
 
 
 if __name__ == "__main__":
