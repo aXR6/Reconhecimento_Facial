@@ -26,6 +26,7 @@ def menu() -> None:
         "Sair",
     ]
     while True:
+        os.system("cls" if os.name == "nt" else "clear")
         choice = questionary.select("Escolha uma opcao", choices=options).ask()
         if choice is None:
             break
