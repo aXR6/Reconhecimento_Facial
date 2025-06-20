@@ -43,6 +43,8 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - transformers
 - huggingface_hub
 - python-dotenv
+- psycopg2-binary  # para gravar resultados no PostgreSQL
+- face_recognition  # necessario para cadastrar e reconhecer pessoas
 
 ## Uso
 
@@ -70,6 +72,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
 5. Para cadastrar uma pessoa usando a webcam, escolha a opção "Cadastrar pessoa" no menu interativo. A imagem da webcam fica aberta até pressionar **c** ou **espaço** para capturar (ou **q** para cancelar).
+   É necessário ter as bibliotecas `face_recognition` e `psycopg2-binary` instaladas para que o cadastro seja salvo no banco de dados.
 6. Para reconhecimento facial em tempo real pela webcam utilize a opção do menu
    interativo ou execute diretamente:
    ```
