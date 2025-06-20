@@ -46,7 +46,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     face_recognition = None
 
-from db import get_conn
+from db import get_conn, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +97,7 @@ def register_person(name: str, image_path: str) -> bool:
         logger.error("No face found in %s", image_path)
         return False
     encoding = encodings[0]
+    init_db()
     with get_conn() as conn:
         if conn is None:
             return False
