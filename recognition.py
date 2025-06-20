@@ -85,13 +85,19 @@ def register_person(name: str, image_path: str) -> None:
         conn.commit()
 
 
-def register_person_webcam(name: str) -> None:
-    """Capture image from webcam and register person in the database."""
+def register_person_webcam(name: str) -> bool:
+    """Capture image from webcam and register person in the database.
+
+    Returns ``True`` when the capture and registration succeed, otherwise
+    ``False``. This allows callers to present a meaningful error message
+    instead of always reporting success.
+    """
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
     if not capture_from_webcam(tmp):
-        return
+        return False
     try:
         register_person(name, tmp)
+        return True
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)
