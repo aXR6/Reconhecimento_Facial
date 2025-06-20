@@ -1,7 +1,7 @@
 opencv-python
 mediapipe
 ultralytics
-torch
+torch>=2.6
 transformers
 huggingface_hub
 python-dotenv

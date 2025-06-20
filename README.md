@@ -12,7 +12,7 @@ da Hugging Face de forma local.
 - opencv-python (pode ser instalado com `pip install opencv-python`)
 - mediapipe
 - ultralytics
-- torch
+- torch >=2.6 (necessário devido às proteções do `transformers` contra CVE-2025-32434)
 - transformers
 - huggingface_hub
 - python-dotenv
