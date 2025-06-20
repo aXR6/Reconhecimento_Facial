@@ -9,6 +9,12 @@ O projeto inclui uma interface de linha de comando unificada e testes automatiza
 
 Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 
+## Variáveis de ambiente
+
+- `MEDIAPIPE_REPO`: repositório do modelo MediaPipe (padrão: `qualcomm/MediaPipe-Face-Detection`).
+- `YOLOV8_REPO`: repositório do modelo YOLOv8 (padrão: `jaredthejelly/yolov8s-face-detection`).
+- `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
+
 ## Requisitos
 
 - Python 3
