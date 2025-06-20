@@ -8,10 +8,10 @@ import questionary
 
 load_dotenv()
 
-from face_detection import detect_faces
-from llm_service import generate_caption
-from obstruction_detection import detect_obstruction
-from recognition import recognize_webcam, register_person_webcam
+from reconhecimento_facial.face_detection import detect_faces
+from reconhecimento_facial.llm_service import generate_caption
+from reconhecimento_facial.obstruction_detection import detect_obstruction
+from reconhecimento_facial.recognition import recognize_webcam, register_person_webcam
 
 logger = logging.getLogger(__name__)
 

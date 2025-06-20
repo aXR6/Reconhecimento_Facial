@@ -125,7 +125,7 @@ def detect_faces(
 
     if recognized is None:
         try:
-            from recognition import recognize_faces
+            from reconhecimento_facial.recognition import recognize_faces
             recognized = recognize_faces(image_path)
         except Exception as exc:  # noqa: BLE001
             logger.error("Falha ao reconhecer rostos: %s", exc)
@@ -140,8 +140,13 @@ def detect_faces(
     result = {"boxes": boxes, "count": total_faces}
     if save_db:
         try:
-            from db import save_detection
-            save_detection(image_path, total_faces, recognized=";".join(recognized or []), result_json=result)
+            from reconhecimento_facial.db import save_detection
+            save_detection(
+                image_path,
+                total_faces,
+                recognized=";".join(recognized or []),
+                result_json=result,
+            )
         except Exception as exc:  # noqa: BLE001
             logger.error("Falha ao salvar no banco: %s", exc)
 

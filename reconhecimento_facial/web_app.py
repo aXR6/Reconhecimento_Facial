@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
-from face_detection import detect_faces
-from llm_service import generate_caption
-from obstruction_detection import detect_obstruction
-from emotion_detection import detect_emotion
+from reconhecimento_facial.face_detection import detect_faces
+from reconhecimento_facial.llm_service import generate_caption
+from reconhecimento_facial.obstruction_detection import detect_obstruction
+from reconhecimento_facial.emotion_detection import detect_emotion
 
 app = Flask(__name__)
 

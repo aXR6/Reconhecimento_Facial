@@ -25,21 +25,21 @@ Instale as dependências e crie as tabelas necessárias (caso use PostgreSQL):
 
 ```bash
 pip install .
-python -c "import db; db.init_db()"
+python -c "from reconhecimento_facial import db; db.init_db()"
 ```
 
 Para utilizar o menu interativo:
 
 ```bash
-python3 app.py
+python3 -m reconhecimento_facial.app
 ```
 
 Você também pode executar comandos específicos diretamente pela CLI:
 
 ```bash
-python3 face_detection.py --image caminho/para/imagem.jpg --output saida.jpg
-python3 app.py detect --image caminho/para/imagem.jpg --model yolov8
-python3 recognition.py --webcam
+python3 -m reconhecimento_facial.face_detection --image caminho/para/imagem.jpg --output saida.jpg
+python3 -m reconhecimento_facial.app detect --image caminho/para/imagem.jpg --model yolov8
+python3 -m reconhecimento_facial.recognition --webcam
 ```
 
 ## Organização dos menus

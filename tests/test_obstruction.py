@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import obstruction_detection as od
+import reconhecimento_facial.obstruction_detection as od
 
 
 def test_detect_obstruction(monkeypatch):

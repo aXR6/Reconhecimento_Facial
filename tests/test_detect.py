@@ -4,8 +4,8 @@ import numpy as np
 import cv2
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from face_detection import detect_faces
-import face_detection as fd_mod
+from reconhecimento_facial.face_detection import detect_faces
+import reconhecimento_facial.face_detection as fd_mod
 
 
 def test_detect_no_faces(tmp_path):
