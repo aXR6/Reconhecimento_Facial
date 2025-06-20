@@ -50,6 +50,11 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
    ```
    pip install .
    ```
+   Em seguida crie as tabelas necessárias (PostgreSQL deve estar em
+   execução e a variável `POSTGRES_DSN` configurada):
+   ```
+   python -c "import db; db.init_db()"
+   ```
 2. Você pode executar a detecção diretamente:
    ```
    python3 face_detection.py --image caminho/para/imagem.jpg --output saida.jpg
