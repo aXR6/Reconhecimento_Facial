@@ -1,11 +1,11 @@
 # Reconhecimento Facial
 
 Este projeto detecta rostos em imagens usando Python 3 e o modelo Haar Cascade do OpenCV.
-Opcionalmente, é possível utilizar os modelos **MediaPipe-Face-Detection** ou **YOLOv8-Face-Detection** da Hugging Face localmente para auxiliar na detecção.
+Opcionalmente, é possível utilizar os modelos **MediaPipe-Face-Detection**, **YOLOv8-Face-Detection** ou **Face-Obstruction-Detection** da Hugging Face localmente para auxiliar na detecção.
 Os modelos são baixados automaticamente do Hub na primeira execução, não sendo necessário configurar URLs de API.
 Também é possível gerar uma legenda da imagem utilizando um modelo de linguagem da Hugging Face de forma local.
 
-O projeto inclui uma interface de linha de comando unificada e testes automatizados com `pytest`. Modelos alternativos podem ser definidos pelas variáveis de ambiente `MEDIAPIPE_REPO`, `YOLOV8_REPO` e `HF_CAPTION_MODEL`.
+O projeto inclui uma interface de linha de comando unificada e testes automatizados com `pytest`. Modelos alternativos podem ser definidos pelas variáveis de ambiente `MEDIAPIPE_REPO`, `YOLOV8_REPO`, `HF_CAPTION_MODEL` e `OBSTRUCTION_MODEL_REPO`.
 
 Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 
@@ -14,6 +14,8 @@ Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 - `MEDIAPIPE_REPO`: repositório do modelo MediaPipe (padrão: `qualcomm/MediaPipe-Face-Detection`).
 - `YOLOV8_REPO`: repositório do modelo YOLOv8 (padrão: `jaredthejelly/yolov8s-face-detection`).
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
+- `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial
+  (padrão: `dima806/face_obstruction_image_detection`).
 
 ## Requisitos
 
@@ -46,8 +48,9 @@ Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
    ou para executar comandos diretamente, utilize:
    ```
    python3 app.py           # menu interativo
-   python3 app.py detect --image caminho/para/imagem.jpg --model yolov8
-   python3 app.py caption --image caminho/para/imagem.jpg
+    python3 app.py detect --image caminho/para/imagem.jpg --model yolov8
+    python3 app.py caption --image caminho/para/imagem.jpg
+    python3 app.py obstruction --image caminho/para/imagem.jpg
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
 
