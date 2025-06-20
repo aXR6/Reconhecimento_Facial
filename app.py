@@ -10,7 +10,7 @@ load_dotenv()
 from face_detection import detect_faces
 from llm_service import generate_caption
 from obstruction_detection import detect_obstruction
-from recognition import register_person, recognize_webcam
+from recognition import recognize_webcam, register_person_webcam
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +71,12 @@ def menu() -> None:
             except Exception as exc:
                 print(f"Erro: {exc}")
         elif choice == options[5]:
-            image = input("Imagem da pessoa: ").strip()
             name = input("Nome da pessoa: ").strip()
-            register_person(name, image)
-            print("Pessoa cadastrada")
+            try:
+                register_person_webcam(name)
+                print("Pessoa cadastrada")
+            except Exception as exc:
+                print(f"Erro ao cadastrar: {exc}")
         elif choice == options[6]:
             recognize_webcam()
         elif choice == options[7]:

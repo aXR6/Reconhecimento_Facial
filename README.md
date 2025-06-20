@@ -12,6 +12,7 @@ Agora a aplicação também oferece:
 
 - Processamento de vídeos ou webcam com `--video` ou `--camera`.
 - Reconhecimento facial com cadastro de pessoas.
+- Cadastro de pessoas via webcam.
 - Reconhecimento em tempo real pela webcam.
 - Classificação de emoções.
 - Opção de desfocar rostos para privacidade.
@@ -68,7 +69,8 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
     python3 app.py obstruction --image caminho/para/imagem.jpg
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
-5. Para reconhecimento facial em tempo real pela webcam utilize a opção do menu
+5. Para cadastrar uma pessoa usando a webcam, escolha a opção "Cadastrar pessoa" no menu interativo.
+6. Para reconhecimento facial em tempo real pela webcam utilize a opção do menu
    interativo ou execute diretamente:
    ```
    python3 recognition.py --webcam
