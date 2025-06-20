@@ -46,7 +46,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     face_recognition = None
 
-from db import get_conn, init_db
+from reconhecimento_facial.db import get_conn, init_db
 
 logger = logging.getLogger(__name__)
 
