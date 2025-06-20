@@ -19,23 +19,22 @@ def _patch_face_recognition_models() -> None:
     if not spec or not spec.submodule_search_locations:
         return
 
-    base_path = (spec.submodule_search_locations[0])
+    base_path = spec.submodule_search_locations[0]
+
     def _resource(filename: str) -> str:
         return f"{base_path}/models/{filename}"
 
     module = types.ModuleType("face_recognition_models")
-    module.pose_predictor_model_location = (
-        lambda: _resource("shape_predictor_68_face_landmarks.dat")
+    module.pose_predictor_model_location = lambda: _resource(
+        "shape_predictor_68_face_landmarks.dat"
     )
-    module.pose_predictor_five_point_model_location = (
-        lambda: _resource("shape_predictor_5_face_landmarks.dat")
+    module.pose_predictor_five_point_model_location = lambda: _resource(
+        "shape_predictor_5_face_landmarks.dat"
     )
-    module.face_recognition_model_location = (
-        lambda: _resource("dlib_face_recognition_resnet_model_v1.dat")
+    module.face_recognition_model_location = lambda: _resource(
+        "dlib_face_recognition_resnet_model_v1.dat"
     )
-    module.cnn_face_detector_model_location = (
-        lambda: _resource("mmod_human_face_detector.dat")
-    )
+    module.cnn_face_detector_model_location = lambda: _resource("mmod_human_face_detector.dat")
 
     sys.modules["face_recognition_models"] = module
 
@@ -82,41 +81,49 @@ def capture_from_webcam(tmp_path: str) -> bool:
     return captured
 
 
-def register_person(name: str, image_path: str) -> None:
+def register_person(name: str, image_path: str) -> bool:
+    """Register a person in the database.
+
+    Returns ``True`` if the operation succeeds. ``False`` is returned when a
+    face cannot be encoded or the database is unavailable. This allows callers
+    to properly report failures instead of always signalling success.
+    """
     if face_recognition is None:
         logger.error("face_recognition not installed")
-        return
+        return False
     img = face_recognition.load_image_file(image_path)
     encodings = face_recognition.face_encodings(img)
     if not encodings:
         logger.error("No face found in %s", image_path)
-        return
+        return False
     encoding = encodings[0]
     with get_conn() as conn:
         if conn is None:
-            return
+            return False
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO people (name, embedding) VALUES (%s, %s)",
             (name, encoding.tobytes()),
         )
         conn.commit()
+    return True
 
 
 def register_person_webcam(name: str) -> bool:
-    """Capture image from webcam and register person in the database.
+    """Capture an image from the webcam and register the person.
 
-    Returns ``True`` when the capture and registration succeed, otherwise
-    ``False``. This allows callers to present a meaningful error message
-    instead of always reporting success.
+    The function returns ``True`` only when both the capture and the database
+    insertion succeed. This behaviour ensures that callers do not display a
+    successful message when the registration actually failed.
     """
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
     if not capture_from_webcam(tmp):
         return False
     try:
-        register_person(name, tmp)
-        print("Cadastro salvo com sucesso")
-        return True
+        ok = register_person(name, tmp)
+        if ok:
+            print("Cadastro salvo com sucesso")
+        return ok
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)

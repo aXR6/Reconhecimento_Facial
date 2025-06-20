@@ -77,7 +77,7 @@ def menu() -> None:
                 if register_person_webcam(name):
                     time.sleep(2)
                 else:
-                    print("Erro ao capturar imagem da webcam")
+                    print("Erro ao cadastrar pessoa")
             except Exception as exc:
                 print(f"Erro ao cadastrar: {exc}")
         elif choice == options[6]:
@@ -89,9 +89,7 @@ def menu() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Ferramentas de reconhecimento facial"
-    )
+    parser = argparse.ArgumentParser(description="Ferramentas de reconhecimento facial")
     sub = parser.add_subparsers(dest="cmd")
 
     detect_p = sub.add_parser("detect", help="Detectar rostos")
