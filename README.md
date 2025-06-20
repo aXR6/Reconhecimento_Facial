@@ -12,6 +12,7 @@ Agora a aplicação também oferece:
 
 - Processamento de vídeos ou webcam com `--video` ou `--camera`.
 - Reconhecimento facial com cadastro de pessoas.
+- Reconhecimento em tempo real pela webcam.
 - Classificação de emoções.
 - Opção de desfocar rostos para privacidade.
 - Resultados gravados em banco PostgreSQL (configurável pela variável `POSTGRES_DSN`).
@@ -67,6 +68,10 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
     python3 app.py obstruction --image caminho/para/imagem.jpg
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
+5. Para reconhecimento facial em tempo real pela webcam:
+   ```
+   python3 recognition.py --webcam
+   ```
 
 ## Testes
 
