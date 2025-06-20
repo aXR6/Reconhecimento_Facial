@@ -1,4 +1,7 @@
 opencv-python
-requests
+mediapipe
+ultralytics
+torch
+transformers
 huggingface_hub
 python-dotenv
