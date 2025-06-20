@@ -1,7 +1,13 @@
 import os
+
+from dotenv import load_dotenv
 import requests
 
-API_URL = "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning"
+load_dotenv()
+API_URL = os.getenv(
+    "HF_API_URL",
+    "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
+)
 
 
 def generate_caption(image_path: str, token: str | None = None) -> str:
