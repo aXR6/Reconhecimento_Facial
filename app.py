@@ -16,8 +16,9 @@ def menu() -> None:
         if choice == "1":
             image = input("Caminho da imagem: ").strip()
             output = input("Arquivo de saida [output.jpg]: ").strip() or "output.jpg"
+            use_hf = input("Usar modelo da HuggingFace? [n]: ").strip().lower() == "s"
             try:
-                qtd = detect_faces(image, output)
+                qtd = detect_faces(image, output, use_hf=use_hf)
                 print(f"Detectado(s) {qtd} rosto(s). Resultado salvo em {output}")
             except Exception as exc:
                 print(f"Erro: {exc}")

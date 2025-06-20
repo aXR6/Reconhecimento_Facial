@@ -1,8 +1,24 @@
 import argparse
 import cv2
+from typing import Optional
+
+try:
+    from PIL import Image
+    import numpy as np
+    from qai_hub_models.models.mediapipe_face.app import MediaPipeFaceApp
+    from qai_hub_models.models.mediapipe_face.model import MediaPipeFace
+except Exception:  # pragma: no cover - optional dependency
+    Image = None  # type: ignore
+    MediaPipeFaceApp = None  # type: ignore
+    MediaPipeFace = None  # type: ignore
+    np = None  # type: ignore
 
 
-def detect_faces(image_path: str, output_path: str = "output.jpg") -> int:
+def detect_faces(
+    image_path: str,
+    output_path: str = "output.jpg",
+    use_hf: bool = False,
+) -> int:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
     Retorna o número de rostos encontrados.
@@ -23,6 +39,15 @@ def detect_faces(image_path: str, output_path: str = "output.jpg") -> int:
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+    if use_hf and MediaPipeFaceApp and Image:
+        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        model = MediaPipeFace.from_pretrained()
+        app = MediaPipeFaceApp(model)
+        boxes, _, _, _ = app.predict_landmarks_from_image(img_pil, raw_output=True)
+        if boxes and boxes[0] is not None:
+            for (x1, y1), (x2, y2) in boxes[0].cpu().numpy().astype(int):
+                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
     cv2.imwrite(output_path, img)
     return len(faces)
 
@@ -33,10 +58,15 @@ def main() -> None:
     parser.add_argument(
         "--output", default="output.jpg", help="Arquivo de saída com detecções"
     )
+    parser.add_argument(
+        "--hf",
+        action="store_true",
+        help="Utiliza o modelo MediaPipe-Face-Detection da Hugging Face",
+    )
     args = parser.parse_args()
 
     try:
-        qtd = detect_faces(args.image, args.output)
+        qtd = detect_faces(args.image, args.output, use_hf=args.hf)
     except FileNotFoundError as exc:
         print(exc)
         return
