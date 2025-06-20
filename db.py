@@ -1,5 +1,11 @@
 import logging
 import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pass
 from contextlib import contextmanager
 
 try:
