@@ -1,5 +1,43 @@
 import logging
 import numpy as np
+import sys
+import types
+from importlib.util import find_spec
+
+
+def _patch_face_recognition_models() -> None:
+    """Replace the face_recognition_models package to avoid deprecated
+    pkg_resources import used by the original package."""
+
+    if "face_recognition_models" in sys.modules:
+        return
+
+    spec = find_spec("face_recognition_models")
+    if not spec or not spec.submodule_search_locations:
+        return
+
+    base_path = (spec.submodule_search_locations[0])
+    def _resource(filename: str) -> str:
+        return f"{base_path}/models/{filename}"
+
+    module = types.ModuleType("face_recognition_models")
+    module.pose_predictor_model_location = (
+        lambda: _resource("shape_predictor_68_face_landmarks.dat")
+    )
+    module.pose_predictor_five_point_model_location = (
+        lambda: _resource("shape_predictor_5_face_landmarks.dat")
+    )
+    module.face_recognition_model_location = (
+        lambda: _resource("dlib_face_recognition_resnet_model_v1.dat")
+    )
+    module.cnn_face_detector_model_location = (
+        lambda: _resource("mmod_human_face_detector.dat")
+    )
+
+    sys.modules["face_recognition_models"] = module
+
+
+_patch_face_recognition_models()
 
 try:
     import face_recognition
