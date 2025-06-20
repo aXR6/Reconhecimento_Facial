@@ -1,17 +1,9 @@
 import argparse
-import cv2
+import os
 from typing import Optional
 
-try:
-    from PIL import Image
-    import numpy as np
-    from qai_hub_models.models.mediapipe_face.app import MediaPipeFaceApp
-    from qai_hub_models.models.mediapipe_face.model import MediaPipeFace
-except Exception:  # pragma: no cover - optional dependency
-    Image = None  # type: ignore
-    MediaPipeFaceApp = None  # type: ignore
-    MediaPipeFace = None  # type: ignore
-    np = None  # type: ignore
+import cv2
+import requests
 
 
 def detect_faces(
@@ -39,13 +31,26 @@ def detect_faces(
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    if use_hf and MediaPipeFaceApp and Image:
-        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        model = MediaPipeFace.from_pretrained()
-        app = MediaPipeFaceApp(model)
-        boxes, _, _, _ = app.predict_landmarks_from_image(img_pil, raw_output=True)
-        if boxes and boxes[0] is not None:
-            for (x1, y1), (x2, y2) in boxes[0].cpu().numpy().astype(int):
+    if use_hf:
+        url = os.getenv(
+            "HF_FACE_DETECTION_URL",
+            "https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection",
+        )
+        token = os.getenv("HUGGINGFACE_TOKEN")
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        with open(image_path, "rb") as f:
+            data = f.read()
+        resp = requests.post(url, headers=headers, data=data)
+        if resp.status_code != 200:
+            raise RuntimeError(f"Erro {resp.status_code}: {resp.text}")
+        out = resp.json()
+        if isinstance(out, dict) and "error" in out:
+            raise RuntimeError(f"API error: {out['error']}")
+        for det in out:
+            box = det.get("box")
+            if box:
+                x1, y1 = int(box.get("xmin", 0)), int(box.get("ymin", 0))
+                x2, y2 = int(box.get("xmax", 0)), int(box.get("ymax", 0))
                 cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
     cv2.imwrite(output_path, img)

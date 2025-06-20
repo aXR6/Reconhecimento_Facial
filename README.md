@@ -2,6 +2,7 @@
 
 Este projeto detecta rostos em imagens usando Python 3 e o modelo Haar Cascade do OpenCV.
 Opcionalmente, é possível utilizar o modelo **MediaPipe-Face-Detection** da Hugging Face para auxiliar na detecção.
+O endereço da API utilizada deve ser definido pela variável `HF_FACE_DETECTION_URL` em um arquivo `.env`.
 Também é possível gerar uma legenda da imagem utilizando um modelo de linguagem
 da Hugging Face via API.
 
@@ -36,6 +37,7 @@ da Hugging Face via API.
    ```
    HUGGINGFACE_TOKEN=seu_token_aqui
    HF_API_URL=https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning
+   HF_FACE_DETECTION_URL=https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection
    ```
-   O token é obrigatório para a geração de legendas via API da Hugging Face.
+   O token é obrigatório para as chamadas de API da Hugging Face, tanto para gerar legendas quanto para a detecção de rostos.
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
