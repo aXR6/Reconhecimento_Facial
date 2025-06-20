@@ -33,7 +33,9 @@ def detect_faces(
     Se ``use_hf`` for ``True``, utiliza modelos da Hugging Face localmente
     (``mediapipe`` ou ``yolov8``) para complementar a detecção.
 
-    Retorna o número de rostos encontrados.
+    Retorna o número total de rostos encontrados, somando as
+    detecções do Haar Cascade e dos modelos da Hugging Face
+    quando ``use_hf`` for ``True``.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -47,6 +49,7 @@ def detect_faces(
     faces = face_cascade.detectMultiScale(
         gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
     )
+    total_faces = len(faces)
 
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -63,6 +66,7 @@ def detect_faces(
                 for box in results.boxes.xyxy.cpu().numpy():
                     x1, y1, x2, y2 = map(int, box[:4])
                     cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                total_faces += len(results.boxes)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Falha ao usar modelo YOLOv8: %s", exc)
         else:
@@ -81,11 +85,12 @@ def detect_faces(
                         w = int(box.width * img.shape[1])
                         h = int(box.height * img.shape[0])
                         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    total_faces += len(res.detections)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Falha ao usar modelo MediaPipe: %s", exc)
 
     cv2.imwrite(output_path, img)
-    return len(faces)
+    return total_faces
 
 
 def main() -> None:
