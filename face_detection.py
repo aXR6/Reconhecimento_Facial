@@ -36,8 +36,7 @@ def detect_faces(
             "HF_FACE_DETECTION_URL",
             "https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection",
         )
-        token = os.getenv("HUGGINGFACE_TOKEN")
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        headers = {}
         with open(image_path, "rb") as f:
             data = f.read()
         resp = requests.post(url, headers=headers, data=data)

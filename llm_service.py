@@ -4,23 +4,15 @@ from dotenv import load_dotenv
 import requests
 
 load_dotenv()
-API_URL = os.getenv(
-    "HF_API_URL",
-    "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
-)
+API_URL = "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning"
 
 
 def generate_caption(image_path: str, token: str | None = None) -> str:
     """Envia a imagem para a API de inferência da Hugging Face e retorna a legenda.
 
-    A ``token`` deve ser um token de acesso válido da Hugging Face.
+    O ``token`` é opcional e pode ser utilizado para autenticação na API.
     """
-    if token is None:
-        token = os.getenv("HUGGINGFACE_TOKEN")
-    if not token:
-        raise ValueError("Token da Hugging Face não fornecido")
-
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     with open(image_path, "rb") as f:
         data = f.read()
 
