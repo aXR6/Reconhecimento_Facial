@@ -16,21 +16,17 @@ from recognition import recognize_webcam, register_person_webcam
 logger = logging.getLogger(__name__)
 
 
-def menu() -> None:
+def _detection_menu() -> None:
     options = [
         "Detectar rostos (OpenCV)",
         "Detectar rostos com MediaPipe",
         "Detectar rostos com YOLOv8",
-        "Gerar legenda via LLM",
         "Detectar obstru\u00e7\u00e3o facial",
-        "Cadastrar pessoa",
-        "Reconhecimento via webcam",
-        "Sair",
+        "Voltar",
     ]
     while True:
-        os.system("cls" if os.name == "nt" else "clear")
-        choice = questionary.select("Escolha uma opcao", choices=options).ask()
-        if choice is None:
+        choice = questionary.select("Detec\u00e7\u00e3o", choices=options).ask()
+        if choice in (None, "Voltar"):
             break
 
         if choice == options[0]:
@@ -60,18 +56,24 @@ def menu() -> None:
         elif choice == options[3]:
             image = input("Caminho da imagem: ").strip()
             try:
-                caption = generate_caption(image)
-                print(f"Legenda gerada: {caption}")
-            except Exception as exc:
-                print(f"Erro ao gerar legenda: {exc}")
-        elif choice == options[4]:
-            image = input("Caminho da imagem: ").strip()
-            try:
                 label = detect_obstruction(image)
                 print(f"Obstru\u00e7\u00e3o detectada: {label}")
             except Exception as exc:
                 print(f"Erro: {exc}")
-        elif choice == options[5]:
+
+
+def _recognition_menu() -> None:
+    options = [
+        "Cadastrar pessoa",
+        "Reconhecimento via webcam",
+        "Voltar",
+    ]
+    while True:
+        choice = questionary.select("Reconhecimento", choices=options).ask()
+        if choice in (None, "Voltar"):
+            break
+
+        if choice == options[0]:
             name = input("Nome da pessoa: ").strip()
             try:
                 if register_person_webcam(name):
@@ -80,12 +82,43 @@ def menu() -> None:
                     print("Erro ao cadastrar pessoa")
             except Exception as exc:
                 print(f"Erro ao cadastrar: {exc}")
-        elif choice == options[6]:
+        elif choice == options[1]:
             recognize_webcam()
-        elif choice == options[7]:
+
+
+def _other_menu() -> None:
+    options = [
+        "Gerar legenda via LLM",
+        "Voltar",
+    ]
+    while True:
+        choice = questionary.select("Outros", choices=options).ask()
+        if choice in (None, "Voltar"):
             break
-        else:
-            print("Opcao invalida")
+
+        if choice == options[0]:
+            image = input("Caminho da imagem: ").strip()
+            try:
+                caption = generate_caption(image)
+                print(f"Legenda gerada: {caption}")
+            except Exception as exc:
+                print(f"Erro ao gerar legenda: {exc}")
+
+
+def menu() -> None:
+    main_opts = ["Detec\u00e7\u00e3o", "Reconhecimento", "Outros", "Sair"]
+    while True:
+        os.system("cls" if os.name == "nt" else "clear")
+        choice = questionary.select("Escolha uma categoria", choices=main_opts).ask()
+        if choice in (None, "Sair"):
+            break
+
+        if choice == main_opts[0]:
+            _detection_menu()
+        elif choice == main_opts[1]:
+            _recognition_menu()
+        elif choice == main_opts[2]:
+            _other_menu()
 
 
 def main() -> None:
