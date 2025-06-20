@@ -53,15 +53,31 @@ logger = logging.getLogger(__name__)
 
 
 def capture_from_webcam(tmp_path: str) -> bool:
-    """Capture a single frame from the webcam and save to ``tmp_path``."""
+    """Open webcam preview and capture a frame on key press."""
     cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
-        logger.error("Falha ao capturar imagem da webcam")
+    if not cap.isOpened():
+        logger.error("Nao foi possivel acessar a webcam")
         return False
-    cv2.imwrite(tmp_path, frame)
-    return True
+
+    captured = False
+    print("Pressione 'c' ou ESPAÇO para capturar, 'q' para cancelar")
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            logger.error("Falha ao capturar imagem da webcam")
+            break
+        cv2.imshow("webcam", frame)
+        key = cv2.waitKey(1) & 0xFF
+        if key in (ord("c"), ord(" ")):
+            cv2.imwrite(tmp_path, frame)
+            captured = True
+            break
+        if key == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return captured
 
 
 def register_person(name: str, image_path: str) -> None:
