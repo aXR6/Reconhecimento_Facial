@@ -69,7 +69,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
     python3 app.py obstruction --image caminho/para/imagem.jpg
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
-5. Para cadastrar uma pessoa usando a webcam, escolha a opção "Cadastrar pessoa" no menu interativo.
+5. Para cadastrar uma pessoa usando a webcam, escolha a opção "Cadastrar pessoa" no menu interativo. A imagem da webcam fica aberta até pressionar **c** ou **espaço** para capturar (ou **q** para cancelar).
 6. Para reconhecimento facial em tempo real pela webcam utilize a opção do menu
    interativo ou execute diretamente:
    ```
