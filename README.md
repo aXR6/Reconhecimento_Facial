@@ -6,6 +6,7 @@ Os modelos são baixados automaticamente do Hub na primeira execução, não sen
 Também é possível gerar uma legenda da imagem utilizando um modelo de linguagem da Hugging Face de forma local.
 
 O projeto inclui uma interface de linha de comando unificada e testes automatizados com `pytest`. Modelos alternativos podem ser definidos pelas variáveis de ambiente `MEDIAPIPE_REPO`, `YOLOV8_REPO`, `HF_CAPTION_MODEL` e `OBSTRUCTION_MODEL_REPO`.
+Todas essas variáveis podem ser configuradas em um arquivo `.env` na raiz do projeto e serão carregadas automaticamente.
 
 Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 

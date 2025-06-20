@@ -3,6 +3,12 @@ import logging
 import os
 from typing import Optional
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pass
+
 import cv2
 try:
     from huggingface_hub import hf_hub_download
