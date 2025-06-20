@@ -10,7 +10,7 @@ load_dotenv()
 from face_detection import detect_faces
 from llm_service import generate_caption
 from obstruction_detection import detect_obstruction
-from recognition import register_person
+from recognition import register_person, recognize_webcam
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ def menu() -> None:
         "Gerar legenda via LLM",
         "Detectar obstru\u00e7\u00e3o facial",
         "Cadastrar pessoa",
+        "Reconhecimento via webcam",
         "Sair",
     ]
     while True:
@@ -75,6 +76,8 @@ def menu() -> None:
             register_person(name, image)
             print("Pessoa cadastrada")
         elif choice == options[6]:
+            recognize_webcam()
+        elif choice == options[7]:
             break
         else:
             print("Opcao invalida")
