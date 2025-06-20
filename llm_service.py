@@ -4,6 +4,11 @@ import logging
 import os
 
 try:
+    import torch
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    torch = None
+
+try:
     from transformers import pipeline
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pipeline = None
@@ -21,7 +26,13 @@ def _load_pipe() -> None:
             return
         model_name = os.getenv("HF_CAPTION_MODEL", "nlpconnect/vit-gpt2-image-captioning")
         try:
-            _pipe = pipeline("image-to-text", model=model_name)
+            device = 0 if torch and getattr(torch, "cuda", None) and torch.cuda.is_available() else -1
+            _pipe = pipeline(
+                "image-to-text",
+                model=model_name,
+                device=device,
+                use_fast=True,
+            )
         except Exception as exc:  # noqa: BLE001
             logger.error("Falha ao carregar modelo de legenda: %s", exc)
 
