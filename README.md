@@ -19,7 +19,7 @@ Agora a aplicação também oferece:
 - Dockerfile para facilitar a execução.
 - Menu interativo mais elegante usando `questionary`.
 
-Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
+Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 
 ## Variáveis de ambiente
 
@@ -28,6 +28,8 @@ Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial
   (padrão: `dima806/face_obstruction_image_detection`).
+- `EMOTION_MODEL_REPO`: modelo de classificação de emoções (padrão: `nateraw/fer-vit-base`).
+- `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
 ## Requisitos
 
