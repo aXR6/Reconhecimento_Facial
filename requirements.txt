@@ -1,3 +1,4 @@
 opencv-python
 requests
 huggingface_hub
+qai_hub_models
