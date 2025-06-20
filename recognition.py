@@ -77,6 +77,8 @@ def capture_from_webcam(tmp_path: str) -> bool:
 
     cap.release()
     cv2.destroyAllWindows()
+    cv2.destroyWindow("webcam")
+    cv2.waitKey(1)
     return captured
 
 
@@ -113,6 +115,7 @@ def register_person_webcam(name: str) -> bool:
         return False
     try:
         register_person(name, tmp)
+        print("Cadastro salvo com sucesso")
         return True
     finally:
         if os.path.exists(tmp):

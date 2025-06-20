@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import time
 
 from dotenv import load_dotenv
 import questionary
@@ -74,7 +75,7 @@ def menu() -> None:
             name = input("Nome da pessoa: ").strip()
             try:
                 if register_person_webcam(name):
-                    print("Pessoa cadastrada")
+                    time.sleep(2)
                 else:
                     print("Erro ao capturar imagem da webcam")
             except Exception as exc:
