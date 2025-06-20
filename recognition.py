@@ -120,7 +120,8 @@ def recognize_webcam() -> None:
         ret, frame = cap.read()
         if not ret:
             break
-        rgb = frame[:, :, ::-1]
+        # Convert BGR captured by OpenCV to RGB for face_recognition
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         locations = face_recognition.face_locations(rgb)
         encodings = face_recognition.face_encodings(rgb, locations)
         for (top, right, bottom, left), face_enc in zip(locations, encodings):
