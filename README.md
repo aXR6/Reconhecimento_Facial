@@ -1,16 +1,19 @@
 # Reconhecimento Facial
 
 Este projeto detecta rostos em imagens usando Python 3 e o modelo Haar Cascade do OpenCV.
-Opcionalmente, é possível utilizar os modelos **MediaPipe-Face-Detection** ou **YOLOv8-Face-Detection** da Hugging Face para auxiliar na detecção.
-Os endereços das APIs devem ser definidos pelas variáveis `HF_MEDIAPIPE_URL` e `HF_YOLOV8_URL` em um arquivo `.env`.
+Opcionalmente, é possível utilizar os modelos **MediaPipe-Face-Detection** ou **YOLOv8-Face-Detection** da Hugging Face localmente para auxiliar na detecção.
+Os modelos são baixados automaticamente do Hub na primeira execução, não sendo necessário configurar URLs de API.
 Também é possível gerar uma legenda da imagem utilizando um modelo de linguagem
-da Hugging Face via API.
+da Hugging Face de forma local.
 
 ## Requisitos
 
 - Python 3
 - opencv-python (pode ser instalado com `pip install opencv-python`)
-- requests
+- mediapipe
+- ultralytics
+- torch
+- transformers
 - huggingface_hub
 - python-dotenv
 
@@ -34,10 +37,5 @@ da Hugging Face via API.
    execute:
    ```
    python3 app.py
-   ```
-   Antes de executar, crie um arquivo `.env` na raiz com o conteúdo, por exemplo:
-   ```
-   HF_MEDIAPIPE_URL=https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection
-   HF_YOLOV8_URL=https://api-inference.huggingface.co/models/arnabdhar/YOLOv8-Face-Detection
    ```
 4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.

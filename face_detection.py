@@ -1,9 +1,10 @@
 import argparse
-import os
 from typing import Optional
 
 import cv2
-import requests
+from huggingface_hub import hf_hub_download
+import mediapipe as mp
+from ultralytics import YOLO
 
 
 def detect_faces(
@@ -14,9 +15,8 @@ def detect_faces(
 ) -> int:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
-    Se ``use_hf`` for ``True``, envia a imagem para a API de inferência da
-    Hugging Face. O parâmetro ``hf_model`` pode ser ``"mediapipe"`` ou
-    ``"yolov8"``.
+    Se ``use_hf`` for ``True``, utiliza modelos da Hugging Face localmente
+    (``mediapipe`` ou ``yolov8``) para complementar a detecção.
 
     Retorna o número de rostos encontrados.
     """
@@ -38,30 +38,26 @@ def detect_faces(
 
     if use_hf:
         if hf_model == "yolov8":
-            url = os.getenv(
-                "HF_YOLOV8_URL",
-                "https://api-inference.huggingface.co/models/arnabdhar/YOLOv8-Face-Detection",
+            weight = hf_hub_download(
+                "jaredthejelly/yolov8s-face-detection", "YOLOv8-face-detection.pt"
             )
-        else:
-            url = os.getenv(
-                "HF_MEDIAPIPE_URL",
-                "https://api-inference.huggingface.co/models/qualcomm/MediaPipe-Face-Detection",
-            )
-        headers = {}
-        with open(image_path, "rb") as f:
-            data = f.read()
-        resp = requests.post(url, headers=headers, data=data)
-        if resp.status_code != 200:
-            raise RuntimeError(f"Erro {resp.status_code}: {resp.text}")
-        out = resp.json()
-        if isinstance(out, dict) and "error" in out:
-            raise RuntimeError(f"API error: {out['error']}")
-        for det in out:
-            box = det.get("box")
-            if box:
-                x1, y1 = int(box.get("xmin", 0)), int(box.get("ymin", 0))
-                x2, y2 = int(box.get("xmax", 0)), int(box.get("ymax", 0))
+            yolo = YOLO(weight)
+            results = yolo(img, verbose=False)[0]
+            for box in results.boxes.xyxy.cpu().numpy():
+                x1, y1, x2, y2 = map(int, box[:4])
                 cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        else:
+            mp_fd = mp.solutions.face_detection.FaceDetection(model_selection=0)
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            res = mp_fd.process(rgb)
+            if res.detections:
+                for det in res.detections:
+                    box = det.location_data.relative_bounding_box
+                    x = int(box.xmin * img.shape[1])
+                    y = int(box.ymin * img.shape[0])
+                    w = int(box.width * img.shape[1])
+                    h = int(box.height * img.shape[0])
+                    cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
     cv2.imwrite(output_path, img)
     return len(faces)

@@ -1,28 +1,23 @@
-import os
+from typing import List
 
-from dotenv import load_dotenv
-import requests
+from transformers import pipeline
 
-load_dotenv()
-API_URL = "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning"
+_pipe = None
 
 
-def generate_caption(image_path: str, token: str | None = None) -> str:
-    """Envia a imagem para a API de inferência da Hugging Face e retorna a legenda.
+def _load_pipe() -> None:
+    """Inicializa o pipeline de legenda se ainda não estiver carregado."""
+    global _pipe
+    if _pipe is None:
+        _pipe = pipeline("image-to-text", model="nlpconnect/vit-gpt2-image-captioning")
 
-    O ``token`` é opcional e pode ser utilizado para autenticação na API.
-    """
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    with open(image_path, "rb") as f:
-        data = f.read()
 
-    resp = requests.post(API_URL, headers=headers, data=data)
-    if resp.status_code != 200:
-        raise RuntimeError(f"Erro {resp.status_code}: {resp.text}")
-
-    out = resp.json()
-    if isinstance(out, list) and out:
+def generate_caption(image_path: str) -> str:
+    """Gera legenda da imagem usando modelo local da Hugging Face."""
+    _load_pipe()
+    if _pipe is None:
+        raise RuntimeError("Falha ao carregar modelo de legenda")
+    out: List[dict] = _pipe(image_path)
+    if out:
         return out[0].get("generated_text", "")
-    if isinstance(out, dict):
-        return out.get("generated_text", "")
-    return str(out)
+    return ""
