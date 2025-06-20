@@ -1,10 +1,25 @@
 import argparse
+import logging
+import os
 from typing import Optional
 
 import cv2
-from huggingface_hub import hf_hub_download
-import mediapipe as mp
-from ultralytics import YOLO
+try:
+    from huggingface_hub import hf_hub_download
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    hf_hub_download = None
+
+try:
+    import mediapipe as mp
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    mp = None
+
+try:
+    from ultralytics import YOLO
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    YOLO = None
+
+logger = logging.getLogger(__name__)
 
 
 def detect_faces(
@@ -38,26 +53,36 @@ def detect_faces(
 
     if use_hf:
         if hf_model == "yolov8":
-            weight = hf_hub_download(
-                "jaredthejelly/yolov8s-face-detection", "YOLOv8-face-detection.pt"
-            )
-            yolo = YOLO(weight)
-            results = yolo(img, verbose=False)[0]
-            for box in results.boxes.xyxy.cpu().numpy():
-                x1, y1, x2, y2 = map(int, box[:4])
-                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            repo = os.getenv("YOLOV8_REPO", "jaredthejelly/yolov8s-face-detection")
+            try:
+                if hf_hub_download is None or YOLO is None:
+                    raise RuntimeError("Dependências do YOLOv8 não instaladas")
+                weight = hf_hub_download(repo, "YOLOv8-face-detection.pt")
+                yolo = YOLO(weight)
+                results = yolo(img, verbose=False)[0]
+                for box in results.boxes.xyxy.cpu().numpy():
+                    x1, y1, x2, y2 = map(int, box[:4])
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Falha ao usar modelo YOLOv8: %s", exc)
         else:
-            mp_fd = mp.solutions.face_detection.FaceDetection(model_selection=0)
-            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            res = mp_fd.process(rgb)
-            if res.detections:
-                for det in res.detections:
-                    box = det.location_data.relative_bounding_box
-                    x = int(box.xmin * img.shape[1])
-                    y = int(box.ymin * img.shape[0])
-                    w = int(box.width * img.shape[1])
-                    h = int(box.height * img.shape[0])
-                    cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            repo = os.getenv("MEDIAPIPE_REPO", "qualcomm/MediaPipe-Face-Detection")
+            try:
+                if mp is None:
+                    raise RuntimeError("Dependências do MediaPipe não instaladas")
+                mp_fd = mp.solutions.face_detection.FaceDetection(model_selection=0)
+                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                res = mp_fd.process(rgb)
+                if res.detections:
+                    for det in res.detections:
+                        box = det.location_data.relative_bounding_box
+                        x = int(box.xmin * img.shape[1])
+                        y = int(box.ymin * img.shape[0])
+                        w = int(box.width * img.shape[1])
+                        h = int(box.height * img.shape[0])
+                        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Falha ao usar modelo MediaPipe: %s", exc)
 
     cv2.imwrite(output_path, img)
     return len(faces)
@@ -82,13 +107,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO)
     try:
         qtd = detect_faces(args.image, args.output, use_hf=args.hf, hf_model=args.model)
     except FileNotFoundError as exc:
-        print(exc)
+        logger.error(exc)
         return
 
-    print(f"Detectado(s) {qtd} rosto(s). Resultado salvo em {args.output}")
+    logger.info("Detectado(s) %s rosto(s). Resultado salvo em %s", qtd, args.output)
 
 
 if __name__ == "__main__":

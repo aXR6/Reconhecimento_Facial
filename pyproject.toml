@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reconhecimento-facial"
+version = "0.1.0"
+description = "Detecção facial com modelos locais e geração de legendas"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [{name="Projeto OpenAI"}]
+
+dependencies = [
+    "opencv-python",
+    "mediapipe",
+    "ultralytics",
+    "torch>=2.6",
+    "transformers",
+    "huggingface_hub",
+    "python-dotenv",
+]
+
+[project.scripts]
+face-detect = "face_detection:main"
+face-app = "app:main"
+
+[tool.pytest.ini_options]
+addopts = "-vv"

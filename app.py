@@ -1,5 +1,6 @@
+import argparse
+import logging
 import os
-from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -7,6 +8,8 @@ load_dotenv()
 
 from face_detection import detect_faces
 from llm_service import generate_caption
+
+logger = logging.getLogger(__name__)
 
 
 def menu() -> None:
@@ -56,5 +59,48 @@ def menu() -> None:
             print("Opcao invalida")
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Ferramentas de reconhecimento facial"
+    )
+    sub = parser.add_subparsers(dest="cmd")
+
+    detect_p = sub.add_parser("detect", help="Detectar rostos")
+    detect_p.add_argument("--image", required=True)
+    detect_p.add_argument("--output", default="output.jpg")
+    detect_p.add_argument(
+        "--model",
+        choices=["opencv", "mediapipe", "yolov8"],
+        default="opencv",
+    )
+
+    cap_p = sub.add_parser("caption", help="Gerar legenda")
+    cap_p.add_argument("--image", required=True)
+
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
+
+    if args.cmd is None:
+        menu()
+        return
+
+    if args.cmd == "detect":
+        use_hf = args.model in ("mediapipe", "yolov8")
+        model = args.model if use_hf else "mediapipe"
+        try:
+            qtd = detect_faces(args.image, args.output, use_hf=use_hf, hf_model=model)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Erro ao detectar rostos: %s", exc)
+            return
+        logger.info("Detectado(s) %s rosto(s). Resultado salvo em %s", qtd, args.output)
+    elif args.cmd == "caption":
+        try:
+            caption = generate_caption(args.image)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Erro ao gerar legenda: %s", exc)
+            return
+        print(caption)
+
+
 if __name__ == "__main__":
-    menu()
+    main()
