@@ -1,26 +1,31 @@
 # Reconhecimento Facial
 
 Este projeto detecta rostos em imagens usando Python 3 e o modelo Haar Cascade do OpenCV.
+Também é possível gerar uma legenda da imagem utilizando um modelo de linguagem
+da Hugging Face via API.
 
 ## Requisitos
 
 - Python 3
 - opencv-python (pode ser instalado com `pip install opencv-python`)
+- requests
+- huggingface_hub
 
 ## Uso
 
 1. Instale as dependências:
    ```
-   pip install opencv-python
+   pip install -r requirements.txt
    ```
-2. Execute a detecção em uma imagem:
+2. Você pode executar a detecção diretamente:
    ```
    python3 face_detection.py --image caminho/para/imagem.jpg --output saida.jpg
    ```
-3. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
-
-Um exemplo pode ser feito com a imagem `sample.jpg` incluída no repositório:
-```bash
-python3 face_detection.py --image sample.jpg --output result.jpg
-```
-O resultado será salvo em `result.jpg`.
+3. Para uma experiência interativa com menu e opção de gerar legendas via LLM,
+   execute:
+   ```
+   python3 app.py
+   ```
+   Para utilizar a geração de legenda é necessário definir a variável de
+   ambiente `HUGGINGFACE_TOKEN` com um token válido da Hugging Face.
+4. O script salva `saida.jpg` com retângulos ao redor dos rostos detectados.
