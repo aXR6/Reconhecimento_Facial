@@ -5,6 +5,7 @@ import types
 from importlib.util import find_spec
 
 import cv2
+import os
 
 
 def _patch_face_recognition_models() -> None:
@@ -51,6 +52,18 @@ from db import get_conn
 logger = logging.getLogger(__name__)
 
 
+def capture_from_webcam(tmp_path: str) -> bool:
+    """Capture a single frame from the webcam and save to ``tmp_path``."""
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    cap.release()
+    if not ret:
+        logger.error("Falha ao capturar imagem da webcam")
+        return False
+    cv2.imwrite(tmp_path, frame)
+    return True
+
+
 def register_person(name: str, image_path: str) -> None:
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -70,6 +83,18 @@ def register_person(name: str, image_path: str) -> None:
             (name, encoding.tobytes()),
         )
         conn.commit()
+
+
+def register_person_webcam(name: str) -> None:
+    """Capture image from webcam and register person in the database."""
+    tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
+    if not capture_from_webcam(tmp):
+        return
+    try:
+        register_person(name, tmp)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
 
 
 def recognize_faces(image_path: str) -> list[str]:
