@@ -19,6 +19,7 @@ dependencies = [
     "transformers",
     "huggingface_hub",
     "python-dotenv",
+    "numpy",
 ]
 
 [project.scripts]
