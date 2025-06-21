@@ -15,8 +15,13 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 try:
     import sounddevice as sd
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
+except (ModuleNotFoundError, OSError):  # pragma: no cover - optional dependency
     sd = None
+
+try:
+    from transformers import pipeline
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pipeline = None
 
 try:
     import whisper
@@ -55,13 +60,34 @@ def _process_file(
     return result.get("text", "").strip()
 
 
+def _translate_text(text: str, source_lang: str, target_lang: str) -> str:
+    """Translate ``text`` using HuggingFace models."""
+    if pipeline is None:
+        logger.error("Depend\u00eancias n\u00e3o instaladas: transformers")
+        return ""
+    model_name = f"Helsinki-NLP/opus-mt-{source_lang}-{target_lang}"
+    try:
+        trans = pipeline("translation", model=model_name)
+        res = trans(text)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro na tradu\u00e7\u00e3o: %s", exc)
+        return ""
+    return res[0]["translation_text"] if res else ""
+
+
 def translate_file(
     file_path: str,
     model_name: str = DEFAULT_WHISPER_MODEL,
     source_lang: Optional[str] = None,
+    target_lang: str = "en",
 ) -> str:
-    """Translate an audio file to English using Whisper."""
-    return _process_file(file_path, model_name, "translate", source_lang)
+    """Translate an audio file using Whisper and HuggingFace models."""
+    if target_lang == "en":
+        return _process_file(file_path, model_name, "translate", source_lang)
+    text = _process_file(file_path, model_name, "transcribe", source_lang)
+    if not text:
+        return ""
+    return _translate_text(text, source_lang or "en", target_lang)
 
 
 def transcribe_file(
@@ -77,9 +103,10 @@ def whisper_translate_file(
     file_path: str,
     model_name: str = DEFAULT_WHISPER_MODEL,
     source_lang: Optional[str] = None,
+    target_lang: str = "en",
 ) -> str:
     """Compatibility alias for :func:`translate_file`."""
-    return translate_file(file_path, model_name, source_lang)
+    return translate_file(file_path, model_name, source_lang, target_lang)
 
 
 
@@ -89,6 +116,7 @@ def translate_microphone(
     chunk_seconds: int = 5,
     stop_event: Optional[threading.Event] = None,
     source_lang: str = "pt",
+    target_lang: str = "en",
     translate: bool = True,
 ) -> None:
     """Capture audio and optionally translate chunks using Whisper.
@@ -103,7 +131,7 @@ def translate_microphone(
         Optional event to signal when the loop should stop. Useful when running
         the translation in a background thread.
     translate:
-        When ``True`` translate the audio to English. Otherwise just transcribe.
+        When ``True`` translate the audio. Otherwise just transcribe.
     """
     if whisper is None or sd is None:
         logger.error("Depend\u00eancias n\u00e3o instaladas: whisper ou sounddevice")
@@ -137,15 +165,19 @@ def translate_microphone(
                 if buffer.shape[0] / samplerate >= chunk_seconds:
                     audio = buffer[:, 0]
                     try:
+                        task = "translate" if translate and target_lang == "en" else "transcribe"
                         result = model.transcribe(
                             audio,
-                            task="translate" if translate else "transcribe",
+                            task=task,
                             language=source_lang,
                             fp16=False,
                         )
                         text = result.get("text", "").strip()
                         if text:
-                            print(text)
+                            if translate and target_lang != "en":
+                                text = _translate_text(text, source_lang, target_lang)
+                            if text:
+                                print(text)
                     except Exception as exc:  # noqa: BLE001
                         logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
                     buffer = np.empty((0, 1), dtype=np.float32)
@@ -157,6 +189,7 @@ def translate_webcam(
     model_name: str = DEFAULT_WHISPER_MODEL,
     chunk_seconds: int = 5,
     source_lang: str = "pt",
+    target_lang: str = "en",
     recognition_func=None,
     translate: bool = True,
 ) -> None:
@@ -165,7 +198,7 @@ def translate_webcam(
     Parameters
     ----------
     translate:
-        When ``True`` translate the audio to English. Otherwise just transcribe.
+        When ``True`` translate the audio. Otherwise just transcribe.
     """
     if recognition_func is None:
         from .recognition import recognize_webcam as recognition_func
@@ -173,7 +206,7 @@ def translate_webcam(
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=(model_name, chunk_seconds, stop_event, source_lang, translate),
+        args=(model_name, chunk_seconds, stop_event, source_lang, target_lang, translate),
         daemon=True,
     )
     thr.start()
@@ -195,6 +228,7 @@ def main(argv: Optional[list[str]] = None) -> None:
     parser.add_argument("--file", help="Arquivo de áudio a ser traduzido")
     parser.add_argument("--expected", help="Tradução esperada para o áudio")
     parser.add_argument("--src", default="pt", help="Idioma de entrada")
+    parser.add_argument("--dst", default="en", help="Idioma de saída")
     parser.add_argument(
         "--transcribe",
         action="store_true",
@@ -211,7 +245,7 @@ def main(argv: Optional[list[str]] = None) -> None:
         if args.transcribe:
             text = transcribe_file(args.file, args.model, args.src)
         else:
-            text = translate_file(args.file, args.model, args.src)
+            text = translate_file(args.file, args.model, args.src, args.dst)
         if text:
             print(text)
         if args.expected is not None:
@@ -224,6 +258,7 @@ def main(argv: Optional[list[str]] = None) -> None:
             args.model,
             args.chunk,
             args.src,
+            args.dst,
             translate=not args.transcribe,
         )
     else:
@@ -232,6 +267,7 @@ def main(argv: Optional[list[str]] = None) -> None:
             args.chunk,
             None,
             args.src,
+            args.dst,
             translate=not args.transcribe,
         )
 
