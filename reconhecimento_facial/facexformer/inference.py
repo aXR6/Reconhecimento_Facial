@@ -42,7 +42,9 @@ def _load_model() -> None:
     if hf_hub_download is None or MTCNN is None:
         logger.error("Required dependencies not installed")
         return
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    from ..device import torch_device
+
+    device = torch_device()
     try:
         repo = os.getenv("FACEXFORMER_REPO", "kartiknarayan/facexformer")
         weight_path = hf_hub_download(repo, "ckpts/model.pt")
