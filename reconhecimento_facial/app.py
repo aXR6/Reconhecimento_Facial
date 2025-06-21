@@ -132,9 +132,18 @@ def _other_menu() -> None:
             _backend_menu()
 
 
+def _download_models() -> None:
+    """Baixa todos os modelos utilizados pela aplicação."""
+    print("Baixando modelos. Aguarde...")
+    try:
+        preload_models()
+        print("Modelos baixados com sucesso")
+    except Exception as exc:  # noqa: BLE001
+        print(f"Erro ao baixar modelos: {exc}")
+
+
 def menu() -> None:
-    preload_models()
-    main_opts = ["Detec\u00e7\u00e3o", "Reconhecimento", "Outros", "Sair"]
+    main_opts = ["Baixar modelos", "Detecção", "Reconhecimento", "Outros", "Sair"]
     while True:
         os.system("cls" if os.name == "nt" else "clear")
         choice = questionary.select("Escolha uma categoria", choices=main_opts).ask()
@@ -142,10 +151,12 @@ def menu() -> None:
             break
 
         if choice == main_opts[0]:
-            _detection_menu()
+            _download_models()
         elif choice == main_opts[1]:
-            _recognition_menu()
+            _detection_menu()
         elif choice == main_opts[2]:
+            _recognition_menu()
+        elif choice == main_opts[3]:
             _other_menu()
 
 

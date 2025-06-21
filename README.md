@@ -34,6 +34,8 @@ Para utilizar o menu interativo:
 python3 -m reconhecimento_facial.app
 ```
 
+Logo na primeira execução, escolha **Baixar modelos** para realizar o download de todos eles.
+
 Dentro de **Outros**, utilize a op\u00e7\u00e3o *Selecionar backend demogr\u00e1fico* para alternar entre FaceXFormer e DeepFace.
 
 Você também pode executar comandos específicos diretamente pela CLI:
@@ -46,11 +48,12 @@ python3 -m reconhecimento_facial.recognition --webcam
 
 ## Organização dos menus
 
-O programa principal (`app.py`) apresenta três categorias principais:
+O programa principal (`app.py`) apresenta quatro categorias principais:
 
-1. **Detecção** – para identificar rostos ou possíveis obstruções nas imagens.
-2. **Reconhecimento** – para cadastrar pessoas e fazer reconhecimento facial via webcam.
-3. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem e escolher a biblioteca de análise demográfica.
+1. **Baixar modelos** – efetua o download de todos os modelos de uma só vez.
+2. **Detecção** – para identificar rostos ou possíveis obstruções nas imagens.
+3. **Reconhecimento** – para cadastrar pessoas e fazer reconhecimento facial via webcam.
+4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem e escolher a biblioteca de análise demográfica.
 
 ## Funcionalidades
 
