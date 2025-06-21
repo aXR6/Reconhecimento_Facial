@@ -24,6 +24,7 @@ dependencies = [
     "numpy",
     "flask",
     "questionary",
+    "deepface",
     "face_recognition; platform_system != 'Windows'",  # optional
     "psycopg2-binary",
 ]

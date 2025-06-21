@@ -34,6 +34,8 @@ Para utilizar o menu interativo:
 python3 -m reconhecimento_facial.app
 ```
 
+Dentro de **Outros**, utilize a op\u00e7\u00e3o *Selecionar backend demogr\u00e1fico* para alternar entre FaceXFormer e DeepFace.
+
 Você também pode executar comandos específicos diretamente pela CLI:
 
 ```bash
@@ -48,7 +50,7 @@ O programa principal (`app.py`) apresenta três categorias principais:
 
 1. **Detecção** – para identificar rostos ou possíveis obstruções nas imagens.
 2. **Reconhecimento** – para cadastrar pessoas e fazer reconhecimento facial via webcam.
-3. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
+3. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem e escolher a biblioteca de análise demográfica.
 
 ## Funcionalidades
 
@@ -56,6 +58,7 @@ O programa principal (`app.py`) apresenta três categorias principais:
 - Cadastro de pessoas e reconhecimento em tempo real.
 - Detecção de obstrução facial.
 - Detecção de sexo, idade, etnia e cor de pele na webcam.
+- Escolha entre FaceXFormer ou DeepFace para análise demográfica.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - Interface web em Flask e Dockerfile para facilitar a execução.
@@ -69,6 +72,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado para estimar sexo, idade, etnia e cor de pele.
+- `DEMOGRAPHICS_BACKEND`: biblioteca usada para estimar sexo e idade (`facexformer` ou `deepface`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
 ## Requisitos
@@ -81,6 +85,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - transformers
 - huggingface_hub
 - python-dotenv
+- deepface
 
 ## Testes
 
