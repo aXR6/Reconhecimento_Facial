@@ -26,7 +26,10 @@ from reconhecimento_facial.recognition import (
     recognize_webcam_mediapipe,
 )
 from reconhecimento_facial.preload import preload_models
-from reconhecimento_facial.whisper_translation import translate_microphone
+from reconhecimento_facial.whisper_translation import (
+    DEFAULT_WHISPER_MODEL,
+    translate_microphone,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +60,7 @@ def _run_with_translation(func) -> None:
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=("base", 5, stop_event, _src_lang, _tgt_lang),
+        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, _src_lang, _tgt_lang),
         daemon=True,
     )
     thr.start()

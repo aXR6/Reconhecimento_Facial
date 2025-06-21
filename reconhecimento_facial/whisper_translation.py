@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import queue
 import threading
 from typing import Optional
@@ -29,6 +30,9 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 logger = logging.getLogger(__name__)
 _translation_pipes: dict[tuple[str, str], any] = {}
+
+# Default Whisper model used when none is provided
+DEFAULT_WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
 
 
 def _load_translator(src_lang: str, tgt_lang: str):
@@ -63,7 +67,7 @@ def _translate_text(text: str, src_lang: str, tgt_lang: str) -> str:
 
 def translate_file(
     file_path: str,
-    model_name: str = "base",
+    model_name: str = DEFAULT_WHISPER_MODEL,
     source_lang: str = "pt",
     target_lang: str = "en",
 ) -> str:
@@ -108,7 +112,7 @@ def translate_file(
 
 
 def translate_microphone(
-    model_name: str = "base",
+    model_name: str = DEFAULT_WHISPER_MODEL,
     chunk_seconds: int = 5,
     stop_event: Optional[threading.Event] = None,
     source_lang: str = "pt",
@@ -177,7 +181,7 @@ def translate_microphone(
 
 
 def translate_webcam(
-    model_name: str = "base",
+    model_name: str = DEFAULT_WHISPER_MODEL,
     chunk_seconds: int = 5,
     source_lang: str = "pt",
     target_lang: str = "en",
@@ -203,7 +207,11 @@ def translate_webcam(
 
 def main(argv: Optional[list[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Traduz áudio usando Whisper")
-    parser.add_argument("--model", default="base", help="Modelo Whisper a ser usado")
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_WHISPER_MODEL,
+        help="Modelo Whisper a ser usado",
+    )
     parser.add_argument("--chunk", type=int, default=5, help="Duração de cada captura em segundos")
     parser.add_argument("--file", help="Arquivo de áudio a ser traduzido")
     parser.add_argument("--expected", help="Tradução esperada para o áudio")
