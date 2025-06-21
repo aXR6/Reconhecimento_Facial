@@ -28,9 +28,21 @@ def _load_model() -> None:
             except Exception:
                 pass
 
-        DeepFace.build_model("Age", "facial_attribute")
-        DeepFace.build_model("Gender", "facial_attribute")
-        DeepFace.build_model("Race", "facial_attribute")
+        models = [
+            DeepFace.build_model("Age", "facial_attribute"),
+            DeepFace.build_model("Gender", "facial_attribute"),
+            DeepFace.build_model("Race", "facial_attribute"),
+        ]
+        if tf is not None:
+            for m in models:
+                try:  # keras 3 requires an explicit build step
+                    if not getattr(m, "built", False):
+                        m.build((None, 224, 224, 3))
+                except Exception:
+                    try:
+                        m(tf.zeros((1, 224, 224, 3)))
+                    except Exception:
+                        pass
         _model_loaded = True
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to load DeepFace models: %s", exc)
@@ -60,7 +72,7 @@ def detect_demographics(image_path: str) -> dict:
         res = res[0]
     return {
         "age": str(res.get("age", "")),
-        "gender": str(res.get("gender", "")).lower(),
+        "gender": str(res.get("dominant_gender", "")).lower(),
         "ethnicity": str(res.get("dominant_race", "")),
         "skin": str(res.get("dominant_race", "")),
     }
