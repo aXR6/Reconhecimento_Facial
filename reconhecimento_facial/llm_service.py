@@ -56,6 +56,27 @@ def generate_caption(image_path: str) -> str:
     except Exception as exc:  # noqa: BLE001
         logger.error("Erro ao gerar legenda: %s", exc)
         return ""
-    if out:
-        return out[0].get("generated_text", "")
-    return ""
+    caption = out[0].get("generated_text", "") if out else ""
+    try:  # enrich caption with demographic information
+        from .demographics_detection import detect_demographics
+
+        info = detect_demographics(image_path)
+        parts = []
+        if isinstance(info, dict):
+            gender = info.get("gender")
+            age = info.get("age")
+            ethnicity = info.get("ethnicity")
+            skin = info.get("skin")
+            if gender:
+                parts.append(f"gender: {gender}")
+            if age:
+                parts.append(f"age: {age}")
+            if ethnicity:
+                parts.append(f"ethnicity: {ethnicity}")
+            if skin:
+                parts.append(f"skin: {skin}")
+        if parts:
+            caption = f"{caption} ({', '.join(parts)})"
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro ao enriquecer legenda: %s", exc)
+    return caption
