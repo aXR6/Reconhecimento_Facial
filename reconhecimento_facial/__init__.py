@@ -15,6 +15,12 @@ def translate_file(*a, **kw):  # pragma: no cover - wrapper for lazy import
     return _tf(*a, **kw)
 
 
+def transcribe_file(*a, **kw):  # pragma: no cover - wrapper for lazy import
+    from .whisper_translation import transcribe_file as _tsf
+
+    return _tsf(*a, **kw)
+
+
 def whisper_translate_file(*a, **kw):  # pragma: no cover - wrapper for lazy import
     from .whisper_translation import whisper_translate_file as _wtf
 
@@ -32,6 +38,7 @@ __all__ = [
     "set_device",
     "translate_microphone",
     "translate_file",
+    "transcribe_file",
     "whisper_translate_file",
     "translate_webcam",
 ]

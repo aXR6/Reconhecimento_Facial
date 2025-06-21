@@ -34,12 +34,11 @@ from reconhecimento_facial.whisper_translation import (
 logger = logging.getLogger(__name__)
 
 _src_lang = "pt"
-_tgt_lang = "en"
 
 
 def _language_menu() -> None:
-    """Allow user to choose source and target languages for translation."""
-    global _src_lang, _tgt_lang
+    """Allow user to choose the source language for translation."""
+    global _src_lang
     langs = {
         "Português": "pt",
         "English": "en",
@@ -50,9 +49,6 @@ def _language_menu() -> None:
     src = questionary.select("Idioma de entrada", choices=names).ask()
     if src:
         _src_lang = langs[src]
-    tgt = questionary.select("Idioma de saída", choices=names).ask()
-    if tgt:
-        _tgt_lang = langs[tgt]
 
 
 def _run_with_translation(func) -> None:
@@ -60,7 +56,7 @@ def _run_with_translation(func) -> None:
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, _src_lang, _tgt_lang),
+        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, _src_lang, True),
         daemon=True,
     )
     thr.start()
