@@ -62,6 +62,7 @@ O programa principal (`app.py`) apresenta cinco categorias principais:
 - Cadastro de pessoas e reconhecimento em tempo real.
 - Detecção de obstrução facial.
 - Detecção de sexo, idade, etnia e cor de pele na webcam.
+- Análise facial completa via FaceXFormer (segmentação, landmarks, pose etc.).
 - Menu para selecionar o modelo de processamento da webcam (OpenCV, MediaPipe, YOLOv8 ou FaceXFormer).
 - Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
@@ -76,7 +77,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `YOLOV8_REPO`: repositório do modelo YOLOv8 (padrão: `jaredthejelly/yolov8s-face-detection`).
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
-- `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado para estimar sexo, idade, etnia e cor de pele.
+- `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado nas funções de demografia e `analyze_face`.
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 

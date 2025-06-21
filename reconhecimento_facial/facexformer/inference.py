@@ -37,6 +37,84 @@ AGE_LABELS = [
 GENDER_LABELS = ["male", "female"]
 RACE_LABELS = ["white", "black", "asian", "indian", "other"]
 
+# 40 CelebA attribute labels used by FaceXFormer
+ATTRIBUTE_LABELS = [
+    "5_o_Clock_Shadow",
+    "Arched_Eyebrows",
+    "Attractive",
+    "Bags_Under_Eyes",
+    "Bald",
+    "Bangs",
+    "Big_Lips",
+    "Big_Nose",
+    "Black_Hair",
+    "Blond_Hair",
+    "Blurry",
+    "Brown_Hair",
+    "Bushy_Eyebrows",
+    "Chubby",
+    "Double_Chin",
+    "Eyeglasses",
+    "Goatee",
+    "Gray_Hair",
+    "Heavy_Makeup",
+    "High_Cheekbones",
+    "Male",
+    "Mouth_Slightly_Open",
+    "Mustache",
+    "Narrow_Eyes",
+    "No_Beard",
+    "Oval_Face",
+    "Pale_Skin",
+    "Pointy_Nose",
+    "Receding_Hairline",
+    "Rosy_Cheeks",
+    "Sideburns",
+    "Smiling",
+    "Straight_Hair",
+    "Wavy_Hair",
+    "Wearing_Earrings",
+    "Wearing_Hat",
+    "Wearing_Lipstick",
+    "Wearing_Necklace",
+    "Wearing_Necktie",
+    "Young",
+]
+
+
+def _prepare_face(image: Any) -> torch.Tensor:
+    """Return a normalized face tensor detected in ``image``."""
+    mtcnn = MTCNN(keep_all=False, device=_device)
+    if isinstance(image, np.ndarray):
+        if image.ndim == 3 and image.shape[2] == 3:
+            img = Image.fromarray(image[:, :, ::-1])
+        else:
+            img = Image.fromarray(image)
+    elif isinstance(image, Image.Image):
+        img = image.convert("RGB")
+    else:
+        img = Image.open(image).convert("RGB")
+    boxes, _ = mtcnn.detect(img)
+    if boxes is None:
+        raise RuntimeError("no face detected")
+    x1, y1, x2, y2 = boxes[0]
+    w, h = img.size
+    dx = (x2 - x1) * 0.2
+    dy = (y2 - y1) * 0.2
+    x1 = max(0, x1 - dx)
+    y1 = max(0, y1 - dy)
+    x2 = min(w, x2 + dx)
+    y2 = min(h, y2 + dy)
+    face = img.crop((int(x1), int(y1), int(x2), int(y2)))
+    trans = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+    return trans(face).unsqueeze(0).to(_device)
+
 
 def _load_model() -> None:
     global _model, _device
@@ -77,37 +155,7 @@ def detect_demographics(image: Any) -> dict:
     _load_model()
     if _model is None:
         raise RuntimeError("FaceXFormer model not available")
-    mtcnn = MTCNN(keep_all=False, device=_device)
-    if isinstance(image, np.ndarray):
-        if image.ndim == 3 and image.shape[2] == 3:
-            img = Image.fromarray(image[:, :, ::-1])
-        else:
-            img = Image.fromarray(image)
-    elif isinstance(image, Image.Image):
-        img = image.convert("RGB")
-    else:
-        img = Image.open(image).convert("RGB")
-    boxes, _ = mtcnn.detect(img)
-    if boxes is None:
-        raise RuntimeError("no face detected")
-    x1, y1, x2, y2 = boxes[0]
-    w, h = img.size
-    dx = (x2 - x1) * 0.2
-    dy = (y2 - y1) * 0.2
-    x1 = max(0, x1 - dx)
-    y1 = max(0, y1 - dy)
-    x2 = min(w, x2 + dx)
-    y2 = min(h, y2 + dy)
-    face = img.crop((int(x1), int(y1), int(x2), int(y2)))
-
-    trans = transforms.Compose(
-        [
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
-    tensor = trans(face).unsqueeze(0).to(_device)
+    tensor = _prepare_face(image)
 
     labels = {
         "segmentation": torch.zeros((1, 224, 224), device=_device),
@@ -132,3 +180,75 @@ def detect_demographics(image: Any) -> dict:
         "ethnicity": RACE_LABELS[race_idx] if race_idx < len(RACE_LABELS) else str(race_idx),
         "skin": RACE_LABELS[race_idx] if race_idx < len(RACE_LABELS) else str(race_idx),
     }
+
+
+def analyze_face(image: Any) -> dict:
+    """Return multiple facial analysis predictions using FaceXFormer."""
+    _load_model()
+    if _model is None:
+        raise RuntimeError("FaceXFormer model not available")
+
+    tensor = _prepare_face(image)
+
+    labels = {
+        "segmentation": torch.zeros((1, 224, 224), device=_device),
+        "lnm_seg": torch.zeros((1, 5, 2), device=_device),
+        "landmark": torch.zeros((1, 68, 2), device=_device),
+        "headpose": torch.zeros((1, 3), device=_device),
+        "attribute": torch.zeros((1, 40), device=_device),
+        "a_g_e": torch.zeros((1, 3), device=_device),
+        "visibility": torch.zeros((1, 29), device=_device),
+    }
+
+    result: dict[str, Any] = {}
+
+    # segmentation mask
+    tasks = torch.tensor([0], device=_device)
+    (_, _, _, _, _, _, _, seg) = _model(tensor, labels, tasks)
+    result["segmentation"] = seg.argmax(dim=1).squeeze(0).cpu().numpy().tolist()
+
+    # landmarks
+    tasks = torch.tensor([1], device=_device)
+    (lm, _, _, _, _, _, _, _) = _model(tensor, labels, tasks)
+    result["landmarks"] = lm.view(68, 2).cpu().tolist()
+
+    # headpose
+    tasks = torch.tensor([2], device=_device)
+    (_, hp, _, _, _, _, _, _) = _model(tensor, labels, tasks)
+    result["headpose"] = {
+        "pitch": float(hp[0, 0].item()),
+        "yaw": float(hp[0, 1].item()),
+        "roll": float(hp[0, 2].item()),
+    }
+
+    # attributes
+    tasks = torch.tensor([3], device=_device)
+    (_, _, attr, _, _, _, _, _) = _model(tensor, labels, tasks)
+    scores = attr.squeeze(0)
+    attrs = {}
+    for idx, name in enumerate(ATTRIBUTE_LABELS):
+        if idx < scores.numel():
+            attrs[name] = bool(scores[idx] > 0)
+    result["attributes"] = attrs
+
+    # age/gender/race
+    tasks = torch.tensor([4], device=_device)
+    (_, _, _, _, age_out, gender_out, race_out, _) = _model(tensor, labels, tasks)
+    age_idx = int(torch.argmax(age_out, dim=1).item())
+    gender_idx = int(torch.argmax(gender_out, dim=1).item())
+    race_idx = int(torch.argmax(race_out, dim=1).item())
+    result.update(
+        {
+            "age": AGE_LABELS[age_idx] if age_idx < len(AGE_LABELS) else str(age_idx),
+            "gender": GENDER_LABELS[gender_idx] if gender_idx < len(GENDER_LABELS) else str(gender_idx),
+            "ethnicity": RACE_LABELS[race_idx] if race_idx < len(RACE_LABELS) else str(race_idx),
+            "skin": RACE_LABELS[race_idx] if race_idx < len(RACE_LABELS) else str(race_idx),
+        }
+    )
+
+    # visibility
+    tasks = torch.tensor([5], device=_device)
+    (_, _, _, vis, _, _, _, _) = _model(tensor, labels, tasks)
+    result["visibility"] = int(vis.argmax(dim=1).item())
+
+    return result
