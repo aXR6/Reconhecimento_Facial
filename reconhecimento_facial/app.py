@@ -19,6 +19,7 @@ from reconhecimento_facial.face_detection import detect_faces
 from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
 from reconhecimento_facial.recognition import recognize_webcam, register_person_webcam
+from reconhecimento_facial.preload import preload_models
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,7 @@ def _other_menu() -> None:
 
 
 def menu() -> None:
+    preload_models()
     main_opts = ["Detec\u00e7\u00e3o", "Reconhecimento", "Outros", "Sair"]
     while True:
         os.system("cls" if os.name == "nt" else "clear")
