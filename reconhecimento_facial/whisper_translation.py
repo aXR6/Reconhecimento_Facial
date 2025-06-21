@@ -65,6 +65,46 @@ def _translate_text(text: str, src_lang: str, tgt_lang: str) -> str:
     return out[0].get("translation_text", text)
 
 
+def whisper_translate_file(
+    file_path: str,
+    model_name: str = DEFAULT_WHISPER_MODEL,
+    source_lang: Optional[str] = None,
+) -> str:
+    """Translate audio directly to English using Whisper.
+
+    Parameters
+    ----------
+    file_path:
+        Path to the audio file.
+    model_name:
+        Whisper model to use.
+    source_lang:
+        Optional source language code. When ``None`` Whisper will try to detect it.
+
+    Returns
+    -------
+    str
+        Translated text. Empty string on failure.
+    """
+    if whisper is None:
+        logger.error("Dependências não instaladas: whisper")
+        return ""
+    try:
+        model = whisper.load_model(model_name)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Falha ao carregar modelo Whisper: %s", exc)
+        return ""
+    kwargs = {"task": "translate", "fp16": False}
+    if source_lang:
+        kwargs["language"] = source_lang
+    try:
+        result = model.transcribe(file_path, **kwargs)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro na transcrição: %s", exc)
+        return ""
+    return result.get("text", "").strip()
+
+
 def translate_file(
     file_path: str,
     model_name: str = DEFAULT_WHISPER_MODEL,
@@ -117,6 +157,7 @@ def translate_microphone(
     stop_event: Optional[threading.Event] = None,
     source_lang: str = "pt",
     target_lang: str = "en",
+    whisper_only: bool = False,
 ) -> None:
     """Capture audio and translate chunks from ``source_lang`` to ``target_lang``.
 
@@ -129,6 +170,8 @@ def translate_microphone(
     stop_event:
         Optional event to signal when the loop should stop. Useful when running
         the translation in a background thread.
+    whisper_only:
+        When ``True`` uses Whisper's built-in translation (to English only).
     """
     if whisper is None or sd is None:
         logger.error("Depend\u00eancias n\u00e3o instaladas: whisper ou sounddevice")
@@ -164,13 +207,13 @@ def translate_microphone(
                     try:
                         result = model.transcribe(
                             audio,
-                            task="transcribe",
+                            task="translate" if whisper_only else "transcribe",
                             language=source_lang,
                             fp16=False,
                         )
                         text = result.get("text", "").strip()
                         if text:
-                            if source_lang != target_lang:
+                            if not whisper_only and source_lang != target_lang:
                                 text = _translate_text(text, source_lang, target_lang)
                             print(text)
                     except Exception as exc:  # noqa: BLE001
@@ -186,15 +229,22 @@ def translate_webcam(
     source_lang: str = "pt",
     target_lang: str = "en",
     recognition_func=None,
+    whisper_only: bool = False,
 ) -> None:
-    """Translate microphone input while showing the webcam feed."""
+    """Translate microphone input while showing the webcam feed.
+
+    Parameters
+    ----------
+    whisper_only:
+        Use Whisper's built-in translation instead of an external model.
+    """
     if recognition_func is None:
         from .recognition import recognize_webcam as recognition_func
 
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=(model_name, chunk_seconds, stop_event, source_lang, target_lang),
+        args=(model_name, chunk_seconds, stop_event, source_lang, target_lang, whisper_only),
         daemon=True,
     )
     thr.start()
@@ -222,10 +272,18 @@ def main(argv: Optional[list[str]] = None) -> None:
         action="store_true",
         help="Abre a webcam enquanto traduz o áudio",
     )
+    parser.add_argument(
+        "--whisper",
+        action="store_true",
+        help="Usa apenas o Whisper para traduzir diretamente para o inglês",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     if args.file:
-        text = translate_file(args.file, args.model, args.src, args.tgt)
+        if args.whisper:
+            text = whisper_translate_file(args.file, args.model, args.src)
+        else:
+            text = translate_file(args.file, args.model, args.src, args.tgt)
         if text:
             print(text)
         if args.expected is not None:
@@ -234,9 +292,22 @@ def main(argv: Optional[list[str]] = None) -> None:
             else:
                 print("Tradução diferente do esperado")
     elif args.webcam:
-        translate_webcam(args.model, args.chunk, args.src, args.tgt)
+        translate_webcam(
+            args.model,
+            args.chunk,
+            args.src,
+            args.tgt,
+            whisper_only=args.whisper,
+        )
     else:
-        translate_microphone(args.model, args.chunk, None, args.src, args.tgt)
+        translate_microphone(
+            args.model,
+            args.chunk,
+            None,
+            args.src,
+            args.tgt,
+            whisper_only=args.whisper,
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
