@@ -25,6 +25,42 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 logger = logging.getLogger(__name__)
 
 
+def translate_file(file_path: str, model_name: str = "base") -> str:
+    """Translate an audio file to English using Whisper.
+
+    Parameters
+    ----------
+    file_path:
+        Path to the audio file.
+    model_name:
+        Whisper model to use.
+
+    Returns
+    -------
+    str
+        Translated text. Empty string on failure.
+    """
+    if whisper is None:
+        logger.error("Depend\u00eancias n\u00e3o instaladas: whisper")
+        return ""
+    try:
+        model = whisper.load_model(model_name)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Falha ao carregar modelo Whisper: %s", exc)
+        return ""
+    try:
+        result = model.transcribe(
+            file_path,
+            task="translate",
+            language="pt",
+            fp16=False,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
+        return ""
+    return result.get("text", "").strip()
+
+
 def translate_microphone(
     model_name: str = "base",
     chunk_seconds: int = 5,
@@ -106,9 +142,11 @@ def translate_webcam(
 
 
 def main(argv: Optional[list[str]] = None) -> None:
-    parser = argparse.ArgumentParser(description="Traduz audio do microfone em tempo real")
+    parser = argparse.ArgumentParser(description="Traduz áudio usando Whisper")
     parser.add_argument("--model", default="base", help="Modelo Whisper a ser usado")
-    parser.add_argument("--chunk", type=int, default=5, help="Dura\u00e7\u00e3o de cada captura em segundos")
+    parser.add_argument("--chunk", type=int, default=5, help="Duração de cada captura em segundos")
+    parser.add_argument("--file", help="Arquivo de áudio a ser traduzido")
+    parser.add_argument("--expected", help="Tradução esperada para o áudio")
     parser.add_argument(
         "--webcam",
         action="store_true",
@@ -116,7 +154,16 @@ def main(argv: Optional[list[str]] = None) -> None:
     )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
-    if args.webcam:
+    if args.file:
+        text = translate_file(args.file, args.model)
+        if text:
+            print(text)
+        if args.expected is not None:
+            if text.strip().lower() == args.expected.strip().lower():
+                print("Tradução confere")
+            else:
+                print("Tradução diferente do esperado")
+    elif args.webcam:
         translate_webcam(args.model, args.chunk)
     else:
         translate_microphone(args.model, args.chunk)
