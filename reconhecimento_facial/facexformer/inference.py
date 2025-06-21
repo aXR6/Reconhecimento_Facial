@@ -1,5 +1,8 @@
 import logging
 import os
+from typing import Any
+
+import numpy as np
 import torch
 from PIL import Image
 from torchvision import transforms
@@ -63,13 +66,27 @@ def _load_model() -> None:
     _device = device
 
 
-def detect_demographics(image_path: str) -> dict:
-    """Detect age, gender and race using FaceXFormer."""
+def detect_demographics(image: Any) -> dict:
+    """Detect age, gender and race using FaceXFormer.
+
+    Parameters
+    ----------
+    image:
+        Path to an image or an array (BGR) representing the image.
+    """
     _load_model()
     if _model is None:
         raise RuntimeError("FaceXFormer model not available")
     mtcnn = MTCNN(keep_all=False, device=_device)
-    img = Image.open(image_path).convert("RGB")
+    if isinstance(image, np.ndarray):
+        if image.ndim == 3 and image.shape[2] == 3:
+            img = Image.fromarray(image[:, :, ::-1])
+        else:
+            img = Image.fromarray(image)
+    elif isinstance(image, Image.Image):
+        img = image.convert("RGB")
+    else:
+        img = Image.open(image).convert("RGB")
     boxes, _ = mtcnn.detect(img)
     if boxes is None:
         raise RuntimeError("no face detected")
