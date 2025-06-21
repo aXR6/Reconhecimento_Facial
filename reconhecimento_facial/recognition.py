@@ -73,6 +73,35 @@ def capture_from_webcam(tmp_path: str) -> bool:
         if not ret:
             logger.error("Falha ao capturar imagem da webcam")
             break
+        label = ""
+        try:
+            dem = detect_demographics(frame)
+            parts = []
+            gender = dem.get("gender")
+            age = dem.get("age")
+            ethnicity = dem.get("ethnicity")
+            skin = dem.get("skin")
+            if gender:
+                parts.append(gender)
+            if age:
+                parts.append(age)
+            if ethnicity:
+                parts.append(ethnicity)
+            if skin:
+                parts.append(skin)
+            label = ", ".join(parts)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("demographics error: %s", exc)
+        if label:
+            cv2.putText(
+                frame,
+                label,
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
         cv2.imshow("webcam", frame)
         key = cv2.waitKey(1) & 0xFF
         if key in (ord("c"), ord(" ")):
@@ -282,9 +311,30 @@ def recognize_webcam_mediapipe() -> None:
                 if dists[best] < 0.6:
                     name = known_names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            crop = frame[top:bottom, left:right]
+            info = ""
+            try:
+                dem = detect_demographics(crop)
+                gender = dem.get("gender")
+                age = dem.get("age")
+                ethnicity = dem.get("ethnicity")
+                skin = dem.get("skin")
+                parts = [name]
+                if gender:
+                    parts.append(gender)
+                if age:
+                    parts.append(age)
+                if ethnicity:
+                    parts.append(ethnicity)
+                if skin:
+                    parts.append(skin)
+                info = ", ".join(parts)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("demographics error: %s", exc)
+                info = name
             cv2.putText(
                 frame,
-                name,
+                info,
                 (left, top - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
