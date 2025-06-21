@@ -17,9 +17,14 @@ def _load_pipe() -> None:
         if pipeline is None:
             logger.error("transformers not installed")
             return
-        model = os.getenv("DEMOGRAPHICS_MODEL_REPO", "nateraw/age-gender-estimation")
+        model = os.getenv(
+            "DEMOGRAPHICS_MODEL_REPO", "nateraw/age-gender-estimation"
+        )
         try:
-            _pipe = pipeline("image-classification", model=model)
+            if model == "kartiknarayan/facexformer":
+                _pipe = "facexformer"
+            else:
+                _pipe = pipeline("image-classification", model=model)
         except Exception as exc:  # noqa: BLE001
             logger.error("failed to load demographics model: %s", exc)
 
@@ -29,6 +34,13 @@ def detect_demographics(image) -> dict:
     _load_pipe()
     if _pipe is None:
         raise RuntimeError("Demographics model not available")
+    if _pipe == "facexformer":
+        try:
+            from .facexformer.inference import detect_demographics as fx_detect
+            return fx_detect(image)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("error detecting facexformer demographics: %s", exc)
+            return {}
     try:
         preds = _pipe(image)
     except Exception as exc:  # noqa: BLE001

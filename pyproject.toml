@@ -16,6 +16,8 @@ dependencies = [
     "mediapipe",
     "ultralytics",
     "torch>=2.6",
+    "torchvision",
+    "facenet_pytorch",
     "transformers",
     "huggingface_hub",
     "python-dotenv",
