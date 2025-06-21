@@ -37,6 +37,7 @@ python3 -m reconhecimento_facial.app
 Logo na primeira execução, escolha **Baixar modelos** para realizar o download de todos eles.
 
 Dentro de **Outros**, utilize a op\u00e7\u00e3o *Selecionar backend demogr\u00e1fico* para alternar entre FaceXFormer e DeepFace.
+Na mesma se\u00e7\u00e3o h\u00e1 a op\u00e7\u00e3o *Selecionar dispositivo* para escolher CPU ou GPU.
 
 Você também pode executar comandos específicos diretamente pela CLI:
 
@@ -62,6 +63,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Detecção de obstrução facial.
 - Detecção de sexo, idade, etnia e cor de pele na webcam.
 - Escolha entre FaceXFormer ou DeepFace para análise demográfica.
+- Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - Interface web em Flask e Dockerfile para facilitar a execução.
@@ -76,6 +78,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado para estimar sexo, idade, etnia e cor de pele.
 - `DEMOGRAPHICS_BACKEND`: biblioteca usada para estimar sexo e idade (`facexformer` ou `deepface`).
+- `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
 ## Requisitos

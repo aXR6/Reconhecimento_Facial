@@ -110,10 +110,28 @@ def _backend_menu() -> None:
         print(f"Backend selecionado: {choice}")
 
 
+def _device_menu() -> None:
+    options = ["Auto", "GPU", "CPU", "Voltar"]
+    while True:
+        choice = questionary.select("Dispositivo de processamento", choices=options).ask()
+        if choice in (None, "Voltar"):
+            break
+        from reconhecimento_facial.device import set_device
+
+        if choice == "GPU":
+            set_device("gpu")
+        elif choice == "CPU":
+            set_device("cpu")
+        else:
+            set_device("auto")
+        print(f"Dispositivo selecionado: {choice}")
+
+
 def _other_menu() -> None:
     options = [
         "Gerar legenda via LLM",
         "Selecionar backend demogr\u00e1fico",
+        "Selecionar dispositivo",
         "Voltar",
     ]
     while True:
@@ -130,6 +148,8 @@ def _other_menu() -> None:
                 print(f"Erro ao gerar legenda: {exc}")
         elif choice == options[1]:
             _backend_menu()
+        elif choice == options[2]:
+            _device_menu()
 
 
 def _download_models() -> None:

@@ -32,7 +32,10 @@ def _load_pipe() -> None:
             return
         model_name = os.getenv("HF_CAPTION_MODEL", "nlpconnect/vit-gpt2-image-captioning")
         try:
-            device = 0 if torch and getattr(torch, "cuda", None) and torch.cuda.is_available() else -1
+            from .device import torch_device
+
+            device_str = torch_device()
+            device = 0 if device_str == "cuda" else -1
             _pipe = pipeline(
                 "image-to-text",
                 model=model_name,
