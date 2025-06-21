@@ -44,7 +44,7 @@ Você também pode executar comandos específicos diretamente pela CLI:
 python3 -m reconhecimento_facial.face_detection --image caminho/para/imagem.jpg --output saida.jpg
 python3 -m reconhecimento_facial.app detect --image caminho/para/imagem.jpg --model yolov8
 python3 -m reconhecimento_facial.recognition --webcam
-python3 -m reconhecimento_facial.whisper_translation --model base --chunk 5
+python3 -m reconhecimento_facial.whisper_translation --model base --chunk 5 --webcam
 ```
 
 ## Organização dos menus
@@ -69,7 +69,7 @@ O programa principal (`app.py`) apresenta cinco categorias principais:
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - Interface web em Flask e Dockerfile para facilitar a execução.
-- Tradução de fala em tempo real via OpenAI Whisper.
+- Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
 
