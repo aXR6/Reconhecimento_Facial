@@ -36,8 +36,7 @@ python3 -m reconhecimento_facial.app
 
 Logo na primeira execução, escolha **Baixar modelos** para realizar o download de todos eles.
 
-Dentro de **Outros**, utilize a op\u00e7\u00e3o *Selecionar backend demogr\u00e1fico* para alternar entre FaceXFormer e DeepFace.
-Na mesma se\u00e7\u00e3o h\u00e1 a op\u00e7\u00e3o *Selecionar dispositivo* para escolher CPU ou GPU.
+Na seção **Outros** é possível escolher o dispositivo de processamento (CPU ou GPU).
 
 Você também pode executar comandos específicos diretamente pela CLI:
 
@@ -54,7 +53,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 1. **Baixar modelos** – efetua o download de todos os modelos de uma só vez.
 2. **Detecção** – para identificar rostos ou possíveis obstruções nas imagens.
 3. **Reconhecimento** – para cadastrar pessoas e fazer reconhecimento facial via webcam.
-4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem e escolher a biblioteca de análise demográfica.
+4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
 
 ## Funcionalidades
 
@@ -62,7 +61,6 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Cadastro de pessoas e reconhecimento em tempo real.
 - Detecção de obstrução facial.
 - Detecção de sexo, idade, etnia e cor de pele na webcam.
-- Escolha entre FaceXFormer ou DeepFace para análise demográfica.
 - Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
@@ -77,7 +75,6 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado para estimar sexo, idade, etnia e cor de pele.
-- `DEMOGRAPHICS_BACKEND`: biblioteca usada para estimar sexo e idade (`facexformer` ou `deepface`).
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
@@ -91,7 +88,6 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - transformers
 - huggingface_hub
 - python-dotenv
-- deepface
 
 ## Testes
 
