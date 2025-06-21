@@ -12,4 +12,3 @@ flask
 questionary
 face_recognition; platform_system != 'Windows'
 psycopg2-binary
-opencv-python-headless
