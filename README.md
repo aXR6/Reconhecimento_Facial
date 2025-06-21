@@ -48,12 +48,13 @@ python3 -m reconhecimento_facial.recognition --webcam
 
 ## Organização dos menus
 
-O programa principal (`app.py`) apresenta quatro categorias principais:
+O programa principal (`app.py`) apresenta cinco categorias principais:
 
 1. **Baixar modelos** – efetua o download de todos os modelos de uma só vez.
 2. **Detecção** – identifica rostos (inclusive via webcam) ou obstruções nas imagens.
-3. **Reconhecimento** – para cadastrar pessoas, realizar reconhecimento facial ou exibir demografia via webcam.
-4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
+3. **Reconhecimento** – para realizar reconhecimento facial ou exibir demografia via webcam.
+4. **Cadastrar pessoa** – registra uma nova pessoa utilizando a webcam.
+5. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
 
 ## Funcionalidades
 
