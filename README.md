@@ -45,6 +45,7 @@ python3 -m reconhecimento_facial.face_detection --image caminho/para/imagem.jpg 
 python3 -m reconhecimento_facial.app detect --image caminho/para/imagem.jpg --model yolov8
 python3 -m reconhecimento_facial.recognition --webcam
 python3 -m reconhecimento_facial.whisper_translation --model base --chunk 5 --webcam
+python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --expected "texto esperado"
 ```
 
 ## Organização dos menus
