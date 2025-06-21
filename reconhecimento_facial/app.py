@@ -79,7 +79,6 @@ def _detection_menu() -> None:
 
 def _recognition_menu() -> None:
     options = [
-        "Cadastrar pessoa (face_recognition)",
         "Reconhecimento via webcam (face_recognition)",
         "Reconhecimento via webcam (MediaPipe)",
         "Demografia via webcam (FaceXFormer)",
@@ -91,19 +90,10 @@ def _recognition_menu() -> None:
             break
 
         if choice == options[0]:
-            name = input("Nome da pessoa: ").strip()
-            try:
-                if register_person_webcam(name):
-                    time.sleep(2)
-                else:
-                    print("Erro ao cadastrar pessoa")
-            except Exception as exc:
-                print(f"Erro ao cadastrar: {exc}")
-        elif choice == options[1]:
             recognize_webcam()
-        elif choice == options[2]:
+        elif choice == options[1]:
             recognize_webcam_mediapipe()
-        elif choice == options[3]:
+        elif choice == options[2]:
             demographics_webcam()
 
 
@@ -163,6 +153,7 @@ def menu() -> None:
         "Baixar modelos",
         "Detecção",
         "Reconhecimento",
+        "Cadastrar pessoa (face_recognition)",
         "Outros",
         "Sair",
     ]
@@ -179,6 +170,15 @@ def menu() -> None:
         elif choice == main_opts[2]:
             _recognition_menu()
         elif choice == main_opts[3]:
+            name = input("Nome da pessoa: ").strip()
+            try:
+                if register_person_webcam(name):
+                    time.sleep(2)
+                else:
+                    print("Erro ao cadastrar pessoa")
+            except Exception as exc:
+                print(f"Erro ao cadastrar: {exc}")
+        elif choice == main_opts[4]:
             _other_menu()
 
 
