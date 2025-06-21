@@ -69,7 +69,8 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `EMOTION_MODEL_REPO`: modelo de classificação de emoções (padrão: `nateraw/fer-vit-base`).
-- `DEMOGRAPHICS_MODEL_REPO`: modelo para estimar sexo, idade e etnia (padrão: `nateraw/age-gender-estimation`).
+- `DEMOGRAPHICS_MODEL_REPO`: modelo para estimar sexo, idade e etnia (padrão: `kartiknarayan/facexformer`).
+- Para utilizar o FaceXFormer, defina `DEMOGRAPHICS_MODEL_REPO=kartiknarayan/facexformer` no ambiente.
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
 
 ## Requisitos
