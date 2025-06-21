@@ -34,6 +34,7 @@ from reconhecimento_facial.whisper_translation import (
 logger = logging.getLogger(__name__)
 
 _src_lang = "pt"
+_dst_lang = "en"
 
 
 def _language_menu() -> None:
@@ -51,12 +52,27 @@ def _language_menu() -> None:
         _src_lang = langs[src]
 
 
+def _target_language_menu() -> None:
+    """Allow user to choose the target language for translation."""
+    global _dst_lang
+    langs = {
+        "English": "en",
+        "Português": "pt",
+        "Español": "es",
+        "Français": "fr",
+    }
+    names = list(langs.keys())
+    dst = questionary.select("Idioma de saída", choices=names).ask()
+    if dst:
+        _dst_lang = langs[dst]
+
+
 def _run_with_translation(func) -> None:
     """Execute a recognition function while running translation."""
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, _src_lang, True),
+        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, _src_lang, _dst_lang, True),
         daemon=True,
     )
     thr.start()
@@ -127,6 +143,7 @@ def _recognition_menu() -> None:
         if choice in (None, "Voltar"):
             break
         _language_menu()
+        _target_language_menu()
         if choice == options[0]:
             _run_with_translation(recognize_webcam)
         elif choice == options[1]:
