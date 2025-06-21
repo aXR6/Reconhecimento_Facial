@@ -98,9 +98,15 @@ def _webcam_model_menu() -> None:
                 use_hf=use_hf,
                 hf_model=model,
                 show=True,
+                show_info=True,
             )
         except Exception as exc:
             print(f"Erro: {exc}")
+
+
+def _capture_menu() -> None:
+    """Menu para captura da webcam com modelos de detecção."""
+    _webcam_model_menu()
 
 
 def _recognition_menu() -> None:
@@ -182,7 +188,14 @@ def _download_models() -> None:
 
 
 def menu() -> None:
-    main_opts = ["Baixar modelos", "Detecção", "Reconhecimento", "Outros", "Sair"]
+    main_opts = [
+        "Baixar modelos",
+        "Detecção",
+        "Captura pela Webcam",
+        "Reconhecimento",
+        "Outros",
+        "Sair",
+    ]
     while True:
         os.system("cls" if os.name == "nt" else "clear")
         choice = questionary.select("Escolha uma categoria", choices=main_opts).ask()
@@ -194,8 +207,10 @@ def menu() -> None:
         elif choice == main_opts[1]:
             _detection_menu()
         elif choice == main_opts[2]:
-            _recognition_menu()
+            _capture_menu()
         elif choice == main_opts[3]:
+            _recognition_menu()
+        elif choice == main_opts[4]:
             _other_menu()
 
 
