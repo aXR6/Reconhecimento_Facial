@@ -55,6 +55,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 from reconhecimento_facial.db import get_conn, init_db
 from reconhecimento_facial.demographics_detection import detect_demographics
+from reconhecimento_facial.facexformer import analyze_face
 
 logger = logging.getLogger(__name__)
 
@@ -349,7 +350,7 @@ def recognize_webcam_mediapipe() -> None:
 
 
 def demographics_webcam() -> None:
-    """Show age, gender and ethnicity predictions for the webcam feed."""
+    """Display all FaceXFormer predictions using the webcam feed."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         logger.error("Nao foi possivel acessar a webcam")
@@ -359,9 +360,9 @@ def demographics_webcam() -> None:
         ret, frame = cap.read()
         if not ret:
             break
-        label = ""
         try:
-            dem = detect_demographics(frame)
+            dem = analyze_face(frame)
+
             parts = []
             gender = dem.get("gender")
             age = dem.get("age")
@@ -375,19 +376,78 @@ def demographics_webcam() -> None:
                 parts.append(ethnicity)
             if skin:
                 parts.append(skin)
-            label = ", ".join(parts)
+
+            y = 30
+            if parts:
+                label = ", ".join(parts)
+                cv2.putText(
+                    frame,
+                    label,
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                y += 20
+
+            hp = dem.get("headpose")
+            if hp:
+                pose = f"pitch:{hp['pitch']:.1f} yaw:{hp['yaw']:.1f} roll:{hp['roll']:.1f}"
+                cv2.putText(
+                    frame,
+                    pose,
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
+                y += 20
+
+            attrs = dem.get("attributes")
+            if attrs:
+                positives = [k for k, v in attrs.items() if v]
+                if positives:
+                    cv2.putText(
+                        frame,
+                        ", ".join(positives[:5]),
+                        (10, y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        1,
+                    )
+                    y += 20
+
+            vis = dem.get("visibility")
+            if vis is not None:
+                cv2.putText(
+                    frame,
+                    f"visibility: {vis}",
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    1,
+                )
+
+            seg = dem.get("segmentation")
+            if seg is not None:
+                seg_img = np.array(seg, dtype=np.uint8)
+                seg_img = cv2.applyColorMap((seg_img * 20).astype(np.uint8), cv2.COLORMAP_JET)
+                cv2.imshow("segmentation", seg_img)
+
+            landmarks = dem.get("landmarks")
+            if landmarks:
+                lm_img = np.zeros((224, 224, 3), dtype=np.uint8)
+                for x, z in landmarks:
+                    cv2.circle(lm_img, (int(x), int(z)), 1, (0, 255, 0), -1)
+                cv2.imshow("landmarks", lm_img)
+
         except Exception as exc:  # noqa: BLE001
             logger.error("demographics error: %s", exc)
-        if label:
-            cv2.putText(
-                frame,
-                label,
-                (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2,
-            )
+
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
