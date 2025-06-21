@@ -20,6 +20,7 @@ from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
 from reconhecimento_facial.recognition import recognize_webcam, register_person_webcam
 from reconhecimento_facial.preload import preload_models
+from reconhecimento_facial.demographics_detection import set_backend
 
 logger = logging.getLogger(__name__)
 
@@ -94,9 +95,25 @@ def _recognition_menu() -> None:
             recognize_webcam()
 
 
+def _backend_menu() -> None:
+    options = ["FaceXFormer", "DeepFace", "Voltar"]
+    while True:
+        choice = questionary.select(
+            "Biblioteca para analise demografica", choices=options
+        ).ask()
+        if choice in (None, "Voltar"):
+            break
+        if choice == options[0]:
+            set_backend("facexformer")
+        elif choice == options[1]:
+            set_backend("deepface")
+        print(f"Backend selecionado: {choice}")
+
+
 def _other_menu() -> None:
     options = [
         "Gerar legenda via LLM",
+        "Selecionar backend demogr\u00e1fico",
         "Voltar",
     ]
     while True:
@@ -111,6 +128,8 @@ def _other_menu() -> None:
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")
+        elif choice == options[1]:
+            _backend_menu()
 
 
 def menu() -> None:
