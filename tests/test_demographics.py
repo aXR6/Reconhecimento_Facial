@@ -34,3 +34,28 @@ def test_detect_demographics_array(monkeypatch):
     monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
     result = dd.detect_demographics(arr)
     assert result == {'gender': 'female'}
+
+
+def test_analyze_face(monkeypatch):
+    dummy = types.ModuleType('dummy')
+
+    def _analyze(img):
+        return {
+            'age': '20-29',
+            'gender': 'female',
+            'ethnicity': 'white',
+            'landmarks': [[0, 0]],
+            'headpose': {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0},
+            'segmentation': [[0]],
+            'attributes': {'Smiling': True},
+            'visibility': 1,
+        }
+
+    dummy.analyze_face = _analyze
+    dummy.detect_demographics = lambda img: {}
+    monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
+    from reconhecimento_facial.facexformer import analyze_face
+
+    result = analyze_face('img.jpg')
+    assert result['gender'] == 'female'
+    assert 'landmarks' in result
