@@ -234,6 +234,70 @@ def recognize_webcam() -> None:
     cv2.destroyAllWindows()
 
 
+def recognize_webcam_mediapipe() -> None:
+    """Captura a webcam usando MediaPipe para detecção e identifica rostos."""
+    if face_recognition is None:
+        logger.error("face_recognition not installed")
+        return
+    try:
+        import mediapipe as mp  # type: ignore
+    except ModuleNotFoundError:
+        logger.error("mediapipe not installed")
+        return
+
+    mp_fd = mp.solutions.face_detection.FaceDetection(model_selection=0)
+
+    with get_conn() as conn:
+        if conn is None:
+            return
+        cur = conn.cursor()
+        cur.execute("SELECT name, embedding FROM people")
+        data = cur.fetchall()
+
+    known_names = [row[0] for row in data]
+    known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        res = mp_fd.process(rgb)
+        locations = []
+        if res.detections:
+            for det in res.detections:
+                box = det.location_data.relative_bounding_box
+                x = int(box.xmin * frame.shape[1])
+                y = int(box.ymin * frame.shape[0])
+                w = int(box.width * frame.shape[1])
+                h = int(box.height * frame.shape[0])
+                locations.append((y, x + w, y + h, x))
+        encodings = face_recognition.face_encodings(rgb, locations)
+        for (top, right, bottom, left), face_enc in zip(locations, encodings):
+            name = "Unknown"
+            if known_encodings:
+                dists = face_recognition.face_distance(known_encodings, face_enc)
+                best = dists.argmin()
+                if dists[best] < 0.6:
+                    name = known_names[best]
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                name,
+                (left, top - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+            )
+        cv2.imshow("webcam", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 def demographics_webcam() -> None:
     """Show age, gender and ethnicity predictions for the webcam feed."""
     cap = cv2.VideoCapture(0)

@@ -15,13 +15,14 @@ import questionary
 
 load_dotenv()
 
-from reconhecimento_facial.face_detection import detect_faces, detect_faces_video
+from reconhecimento_facial.face_detection import detect_faces
 from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
 from reconhecimento_facial.recognition import (
     recognize_webcam,
     register_person_webcam,
     demographics_webcam,
+    recognize_webcam_mediapipe,
 )
 from reconhecimento_facial.preload import preload_models
 
@@ -33,7 +34,6 @@ def _detection_menu() -> None:
         "Detectar rostos (OpenCV)",
         "Detectar rostos com MediaPipe",
         "Detectar rostos com YOLOv8",
-        "Webcam (selecionar modelo)",
         "Detectar obstru\u00e7\u00e3o facial",
         "Voltar",
     ]
@@ -67,8 +67,6 @@ def _detection_menu() -> None:
             except Exception as exc:
                 print(f"Erro: {exc}")
         elif choice == options[3]:
-            _webcam_model_menu()
-        elif choice == options[4]:
             image = input("Caminho da imagem: ").strip()
             try:
                 label = detect_obstruction(image)
@@ -77,43 +75,14 @@ def _detection_menu() -> None:
                 print(f"Erro: {exc}")
 
 
-def _webcam_model_menu() -> None:
-    options = ["OpenCV", "MediaPipe", "YOLOv8", "FaceXFormer", "Voltar"]
-    while True:
-        choice = questionary.select("Modelo para webcam", choices=options).ask()
-        if choice in (None, "Voltar"):
-            break
-        if choice == "FaceXFormer":
-            demographics_webcam()
-            continue
-        output = input("Arquivo de saida [out.mp4]: ").strip() or "out.mp4"
-        use_hf = choice != "OpenCV"
-        model = "mediapipe"
-        if choice == "YOLOv8":
-            model = "yolov8"
-        try:
-            detect_faces_video(
-                0,
-                output,
-                use_hf=use_hf,
-                hf_model=model,
-                show=True,
-                show_info=True,
-            )
-        except Exception as exc:
-            print(f"Erro: {exc}")
-
-
-def _capture_menu() -> None:
-    """Menu para captura da webcam com modelos de detecção."""
-    _webcam_model_menu()
 
 
 def _recognition_menu() -> None:
     options = [
-        "Cadastrar pessoa",
-        "Reconhecimento via webcam",
-        "Demografia via webcam",
+        "Cadastrar pessoa (face_recognition)",
+        "Reconhecimento via webcam (face_recognition)",
+        "Reconhecimento via webcam (MediaPipe)",
+        "Demografia via webcam (FaceXFormer)",
         "Voltar",
     ]
     while True:
@@ -133,6 +102,8 @@ def _recognition_menu() -> None:
         elif choice == options[1]:
             recognize_webcam()
         elif choice == options[2]:
+            recognize_webcam_mediapipe()
+        elif choice == options[3]:
             demographics_webcam()
 
 
@@ -191,7 +162,6 @@ def menu() -> None:
     main_opts = [
         "Baixar modelos",
         "Detecção",
-        "Captura pela Webcam",
         "Reconhecimento",
         "Outros",
         "Sair",
@@ -207,10 +177,8 @@ def menu() -> None:
         elif choice == main_opts[1]:
             _detection_menu()
         elif choice == main_opts[2]:
-            _capture_menu()
-        elif choice == main_opts[3]:
             _recognition_menu()
-        elif choice == main_opts[4]:
+        elif choice == main_opts[3]:
             _other_menu()
 
 
