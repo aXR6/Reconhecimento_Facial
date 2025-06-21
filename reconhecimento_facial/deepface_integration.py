@@ -28,9 +28,9 @@ def _load_model() -> None:
             except Exception:
                 pass
 
-        DeepFace.build_model("Age")
-        DeepFace.build_model("Gender")
-        DeepFace.build_model("Race")
+        DeepFace.build_model("Age", "facial_attribute")
+        DeepFace.build_model("Gender", "facial_attribute")
+        DeepFace.build_model("Race", "facial_attribute")
         _model_loaded = True
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to load DeepFace models: %s", exc)
