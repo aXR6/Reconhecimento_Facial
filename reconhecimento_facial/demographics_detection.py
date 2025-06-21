@@ -16,5 +16,5 @@ def detect_demographics(image: Any) -> dict:
         from .facexformer.inference import detect_demographics as fx_detect
         return fx_detect(image)
     except Exception as exc:  # noqa: BLE001
-        logger.error("error detecting demographics: %s", exc)
+        logger.debug("error detecting demographics: %s", exc)
         return {}
