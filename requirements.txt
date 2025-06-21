@@ -10,6 +10,5 @@ python-dotenv
 numpy
 flask
 questionary
-deepface
 face_recognition; platform_system != 'Windows'
 psycopg2-binary

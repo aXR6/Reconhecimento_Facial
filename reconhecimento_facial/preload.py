@@ -21,11 +21,6 @@ def preload_models() -> None:
         pass
 
     try:
-        backend = os.getenv("DEMOGRAPHICS_BACKEND", "facexformer")
-        if backend == "deepface":
-            from reconhecimento_facial.deepface_integration import _load_model as _load_deepface
-            _load_deepface()
-        else:
-            _load_facexformer()
+        _load_facexformer()
     except Exception:
         pass
