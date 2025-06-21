@@ -8,15 +8,17 @@ import reconhecimento_facial.whisper_translation as wt
 
 
 def test_translate_file(monkeypatch):
-    dummy_model = types.SimpleNamespace(transcribe=lambda *a, **k: {"text": "hello"})
+    dummy_model = types.SimpleNamespace(transcribe=lambda *a, **k: {"text": "ola"})
     monkeypatch.setattr(wt, "whisper", types.SimpleNamespace(load_model=lambda n: dummy_model))
-    assert wt.translate_file("foo.wav") == "hello"
+    monkeypatch.setattr(wt, "_translate_text", lambda t, s, d: "hello")
+    assert wt.translate_file("foo.wav", source_lang="pt", target_lang="en") == "hello"
 
 
 def test_main_with_expected(monkeypatch, capsys):
-    dummy_model = types.SimpleNamespace(transcribe=lambda *a, **k: {"text": "hi"})
+    dummy_model = types.SimpleNamespace(transcribe=lambda *a, **k: {"text": "oi"})
     monkeypatch.setattr(wt, "whisper", types.SimpleNamespace(load_model=lambda n: dummy_model))
-    wt.main(["--file", "foo.wav", "--expected", "hi"])
+    monkeypatch.setattr(wt, "_translate_text", lambda t, s, d: "hi")
+    wt.main(["--file", "foo.wav", "--expected", "hi", "--src", "pt", "--tgt", "en"])
     captured = capsys.readouterr()
     assert "hi" in captured.out
     assert "Tradu\u00e7\u00e3o confere" in captured.out

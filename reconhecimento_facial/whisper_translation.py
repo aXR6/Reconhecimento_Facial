@@ -7,6 +7,11 @@ from typing import Optional
 import numpy as np
 
 try:
+    from transformers import pipeline
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pipeline = None
+
+try:
     from dotenv import load_dotenv
     load_dotenv()
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
@@ -23,10 +28,46 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     whisper = None
 
 logger = logging.getLogger(__name__)
+_translation_pipes: dict[tuple[str, str], any] = {}
 
 
-def translate_file(file_path: str, model_name: str = "base") -> str:
-    """Translate an audio file to English using Whisper.
+def _load_translator(src_lang: str, tgt_lang: str):
+    """Load translation pipeline for the given languages."""
+    key = (src_lang, tgt_lang)
+    pipe = _translation_pipes.get(key)
+    if pipe is None:
+        if pipeline is None:
+            logger.error("transformers não está instalado")
+            return None
+        model_name = f"Helsinki-NLP/opus-mt-{src_lang}-{tgt_lang}"
+        try:
+            pipe = pipeline("translation", model=model_name)
+            _translation_pipes[key] = pipe
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Falha ao carregar modelo de tradução: %s", exc)
+            return None
+    return pipe
+
+
+def _translate_text(text: str, src_lang: str, tgt_lang: str) -> str:
+    pipe = _load_translator(src_lang, tgt_lang)
+    if pipe is None:
+        return text
+    try:
+        out = pipe(text)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Erro na tradução: %s", exc)
+        return text
+    return out[0].get("translation_text", text)
+
+
+def translate_file(
+    file_path: str,
+    model_name: str = "base",
+    source_lang: str = "pt",
+    target_lang: str = "en",
+) -> str:
+    """Translate an audio file using Whisper and a translation model.
 
     Parameters
     ----------
@@ -51,22 +92,29 @@ def translate_file(file_path: str, model_name: str = "base") -> str:
     try:
         result = model.transcribe(
             file_path,
-            task="translate",
-            language="pt",
+            task="transcribe",
+            language=source_lang,
             fp16=False,
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
         return ""
-    return result.get("text", "").strip()
+    text = result.get("text", "").strip()
+    if not text:
+        return ""
+    if source_lang != target_lang:
+        text = _translate_text(text, source_lang, target_lang)
+    return text
 
 
 def translate_microphone(
     model_name: str = "base",
     chunk_seconds: int = 5,
     stop_event: Optional[threading.Event] = None,
+    source_lang: str = "pt",
+    target_lang: str = "en",
 ) -> None:
-    """Capture audio from the microphone and translate chunks to English.
+    """Capture audio and translate chunks from ``source_lang`` to ``target_lang``.
 
     Parameters
     ----------
@@ -110,9 +158,16 @@ def translate_microphone(
                 if buffer.shape[0] / samplerate >= chunk_seconds:
                     audio = buffer[:, 0]
                     try:
-                        result = model.transcribe(audio, task="translate", language="pt", fp16=False)
+                        result = model.transcribe(
+                            audio,
+                            task="transcribe",
+                            language=source_lang,
+                            fp16=False,
+                        )
                         text = result.get("text", "").strip()
                         if text:
+                            if source_lang != target_lang:
+                                text = _translate_text(text, source_lang, target_lang)
                             print(text)
                     except Exception as exc:  # noqa: BLE001
                         logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
@@ -122,20 +177,25 @@ def translate_microphone(
 
 
 def translate_webcam(
-    model_name: str = "base", chunk_seconds: int = 5
+    model_name: str = "base",
+    chunk_seconds: int = 5,
+    source_lang: str = "pt",
+    target_lang: str = "en",
+    recognition_func=None,
 ) -> None:
     """Translate microphone input while showing the webcam feed."""
-    from .recognition import recognize_webcam
+    if recognition_func is None:
+        from .recognition import recognize_webcam as recognition_func
 
     stop_event = threading.Event()
     thr = threading.Thread(
         target=translate_microphone,
-        args=(model_name, chunk_seconds, stop_event),
+        args=(model_name, chunk_seconds, stop_event, source_lang, target_lang),
         daemon=True,
     )
     thr.start()
     try:
-        recognize_webcam()
+        recognition_func()
     finally:
         stop_event.set()
         thr.join()
@@ -147,6 +207,8 @@ def main(argv: Optional[list[str]] = None) -> None:
     parser.add_argument("--chunk", type=int, default=5, help="Duração de cada captura em segundos")
     parser.add_argument("--file", help="Arquivo de áudio a ser traduzido")
     parser.add_argument("--expected", help="Tradução esperada para o áudio")
+    parser.add_argument("--src", default="pt", help="Idioma de entrada")
+    parser.add_argument("--tgt", default="en", help="Idioma de saída")
     parser.add_argument(
         "--webcam",
         action="store_true",
@@ -155,7 +217,7 @@ def main(argv: Optional[list[str]] = None) -> None:
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     if args.file:
-        text = translate_file(args.file, args.model)
+        text = translate_file(args.file, args.model, args.src, args.tgt)
         if text:
             print(text)
         if args.expected is not None:
@@ -164,9 +226,9 @@ def main(argv: Optional[list[str]] = None) -> None:
             else:
                 print("Tradução diferente do esperado")
     elif args.webcam:
-        translate_webcam(args.model, args.chunk)
+        translate_webcam(args.model, args.chunk, args.src, args.tgt)
     else:
-        translate_microphone(args.model, args.chunk)
+        translate_microphone(args.model, args.chunk, None, args.src, args.tgt)
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
