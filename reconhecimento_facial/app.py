@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import time
+import threading
 
 if __package__ is None or __package__ == "":
     import pathlib
@@ -25,8 +26,46 @@ from reconhecimento_facial.recognition import (
     recognize_webcam_mediapipe,
 )
 from reconhecimento_facial.preload import preload_models
+from reconhecimento_facial.whisper_translation import translate_microphone
 
 logger = logging.getLogger(__name__)
+
+_src_lang = "pt"
+_tgt_lang = "en"
+
+
+def _language_menu() -> None:
+    """Allow user to choose source and target languages for translation."""
+    global _src_lang, _tgt_lang
+    langs = {
+        "Português": "pt",
+        "English": "en",
+        "Español": "es",
+        "Français": "fr",
+    }
+    names = list(langs.keys())
+    src = questionary.select("Idioma de entrada", choices=names).ask()
+    if src:
+        _src_lang = langs[src]
+    tgt = questionary.select("Idioma de saída", choices=names).ask()
+    if tgt:
+        _tgt_lang = langs[tgt]
+
+
+def _run_with_translation(func) -> None:
+    """Execute a recognition function while running translation."""
+    stop_event = threading.Event()
+    thr = threading.Thread(
+        target=translate_microphone,
+        args=("base", 5, stop_event, _src_lang, _tgt_lang),
+        daemon=True,
+    )
+    thr.start()
+    try:
+        func()
+    finally:
+        stop_event.set()
+        thr.join()
 
 
 def _detection_menu() -> None:
@@ -88,13 +127,13 @@ def _recognition_menu() -> None:
         choice = questionary.select("Reconhecimento", choices=options).ask()
         if choice in (None, "Voltar"):
             break
-
+        _language_menu()
         if choice == options[0]:
-            recognize_webcam()
+            _run_with_translation(recognize_webcam)
         elif choice == options[1]:
-            recognize_webcam_mediapipe()
+            _run_with_translation(recognize_webcam_mediapipe)
         elif choice == options[2]:
-            demographics_webcam()
+            _run_with_translation(demographics_webcam)
 
 
 
