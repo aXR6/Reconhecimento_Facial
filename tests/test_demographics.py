@@ -20,3 +20,17 @@ def test_detect_demographics_facexformer(monkeypatch):
         'ethnicity': 'asian',
         'skin': 'light'
     }
+
+
+def test_detect_demographics_array(monkeypatch):
+    arr = object()
+    dummy = types.ModuleType('dummy')
+
+    def _detect(img):
+        assert img is arr
+        return {'gender': 'female'}
+
+    dummy.detect_demographics = _detect
+    monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
+    result = dd.detect_demographics(arr)
+    assert result == {'gender': 'female'}
