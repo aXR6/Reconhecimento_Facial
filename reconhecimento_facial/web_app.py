@@ -10,7 +10,6 @@ if __package__ is None or __package__ == "":
 from reconhecimento_facial.face_detection import detect_faces
 from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
-from reconhecimento_facial.emotion_detection import detect_emotion
 
 app = Flask(__name__)
 
@@ -25,8 +24,7 @@ def process():
     faces = detect_faces(path, path, as_json=True, save_db=True)
     caption = generate_caption(path)
     obstruction = detect_obstruction(path)
-    emotion = detect_emotion(path)
-    return jsonify({'faces': faces, 'caption': caption, 'obstruction': obstruction, 'emotion': emotion})
+    return jsonify({'faces': faces, 'caption': caption, 'obstruction': obstruction})
 
 
 if __name__ == '__main__':
