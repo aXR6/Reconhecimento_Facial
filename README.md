@@ -51,8 +51,8 @@ python3 -m reconhecimento_facial.recognition --webcam
 O programa principal (`app.py`) apresenta quatro categorias principais:
 
 1. **Baixar modelos** – efetua o download de todos os modelos de uma só vez.
-2. **Detecção** – para identificar rostos ou possíveis obstruções nas imagens.
-3. **Reconhecimento** – para cadastrar pessoas e fazer reconhecimento facial via webcam.
+2. **Detecção** – identifica rostos (inclusive via webcam) ou obstruções nas imagens.
+3. **Reconhecimento** – para cadastrar pessoas, realizar reconhecimento facial ou exibir demografia via webcam.
 4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
 
 ## Funcionalidades
@@ -61,6 +61,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Cadastro de pessoas e reconhecimento em tempo real.
 - Detecção de obstrução facial.
 - Detecção de sexo, idade, etnia e cor de pele na webcam.
+- Menu para selecionar o modelo de processamento da webcam (OpenCV, MediaPipe, YOLOv8 ou FaceXFormer).
 - Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
