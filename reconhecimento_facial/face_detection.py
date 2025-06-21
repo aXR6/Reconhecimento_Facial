@@ -169,6 +169,7 @@ def detect_faces_video(
     hf_model: str = "mediapipe",
     show: bool = False,
     blur: bool = False,
+    show_info: bool = False,
 ) -> None:
     cap = cv2.VideoCapture(source)
     writer = None
@@ -191,9 +192,43 @@ def detect_faces_video(
             hf_model=hf_model,
             show=False,
             blur=blur,
-            as_json=False,
+            as_json=True,
         )
         processed = cv2.imread(tmp)
+        if show_info:
+            try:
+                from .demographics_detection import detect_demographics
+
+                for (x, y, w, h) in res.get("boxes", []):
+                    crop = processed[y : y + h, x : x + w]
+                    label = ""
+                    info = detect_demographics(crop)
+                    parts = []
+                    gender = info.get("gender")
+                    age = info.get("age")
+                    ethnicity = info.get("ethnicity")
+                    skin = info.get("skin")
+                    if gender:
+                        parts.append(gender)
+                    if age:
+                        parts.append(age)
+                    if ethnicity:
+                        parts.append(ethnicity)
+                    if skin:
+                        parts.append(skin)
+                    label = ", ".join(parts)
+                    if label:
+                        cv2.putText(
+                            processed,
+                            label,
+                            (x, y - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.6,
+                            (0, 255, 0),
+                            2,
+                        )
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Falha ao gerar info da webcam: %s", exc)
         if writer:
             writer.write(processed)
         if show:
@@ -227,6 +262,7 @@ def main() -> None:
     )
     parser.add_argument("--show", action="store_true", help="Exibe imagem")
     parser.add_argument("--blur", action="store_true", help="Desfoca faces")
+    parser.add_argument("--info", action="store_true", help="Exibe informacoes sobre as faces")
     parser.add_argument("--json", action="store_true", help="Retorna JSON")
     parser.add_argument("--save-db", action="store_true", help="Salva resultado no banco")
     args = parser.parse_args()
@@ -242,6 +278,7 @@ def main() -> None:
                 hf_model=args.model,
                 show=args.show,
                 blur=args.blur,
+                show_info=args.info,
             )
             qtd = None
         else:
