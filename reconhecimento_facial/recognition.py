@@ -234,6 +234,53 @@ def recognize_webcam() -> None:
     cv2.destroyAllWindows()
 
 
+def demographics_webcam() -> None:
+    """Show age, gender and ethnicity predictions for the webcam feed."""
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        logger.error("Nao foi possivel acessar a webcam")
+        return
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        label = ""
+        try:
+            dem = detect_demographics(frame)
+            parts = []
+            gender = dem.get("gender")
+            age = dem.get("age")
+            ethnicity = dem.get("ethnicity")
+            skin = dem.get("skin")
+            if gender:
+                parts.append(gender)
+            if age:
+                parts.append(age)
+            if ethnicity:
+                parts.append(ethnicity)
+            if skin:
+                parts.append(skin)
+            label = ", ".join(parts)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("demographics error: %s", exc)
+        if label:
+            cv2.putText(
+                frame,
+                label,
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
+        cv2.imshow("webcam", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 if __name__ == "__main__":  # pragma: no cover - CLI helper
     import argparse
 
