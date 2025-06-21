@@ -1,4 +1,5 @@
 import logging
+import os
 import torch
 from PIL import Image
 from torchvision import transforms
@@ -43,9 +44,8 @@ def _load_model() -> None:
         return
     device = "cuda" if torch.cuda.is_available() else "cpu"
     try:
-        weight_path = hf_hub_download(
-            repo_id="kartiknarayan/facexformer", filename="ckpts/model.pt"
-        )
+        repo = os.getenv("FACEXFORMER_REPO", "kartiknarayan/facexformer")
+        weight_path = hf_hub_download(repo, "ckpts/model.pt")
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to download facexformer weights: %s", exc)
         return
