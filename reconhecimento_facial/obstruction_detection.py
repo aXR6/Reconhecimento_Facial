@@ -2,8 +2,8 @@ import logging
 import os
 
 try:
-    from dotenv import load_dotenv
-    load_dotenv()
+    from dotenv import load_dotenv, find_dotenv
+    load_dotenv(find_dotenv())
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pass
 

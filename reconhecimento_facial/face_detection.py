@@ -11,8 +11,8 @@ if __package__ is None or __package__ == "":
     __package__ = "reconhecimento_facial"
 
 try:
-    from dotenv import load_dotenv
-    load_dotenv()
+    from dotenv import load_dotenv, find_dotenv
+    load_dotenv(find_dotenv())
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pass
 
