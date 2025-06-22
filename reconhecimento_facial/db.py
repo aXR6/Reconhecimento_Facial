@@ -17,13 +17,19 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 logger = logging.getLogger(__name__)
 
-DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/face_db")
+DSN = os.getenv("POSTGRES_DSN")
+
+if not DSN:
+    logger.warning("POSTGRES_DSN not set; database features disabled")
 
 
 @contextmanager
 def get_conn():
-    if psycopg2 is None:
-        logger.error("psycopg2 not installed")
+    if psycopg2 is None or not DSN:
+        if psycopg2 is None:
+            logger.error("psycopg2 not installed")
+        else:
+            logger.error("POSTGRES_DSN not configured")
         yield None
         return
     conn = None
