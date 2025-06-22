@@ -11,10 +11,10 @@ if __package__ is None or __package__ == "":
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
     __package__ = "reconhecimento_facial"
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import questionary
 
-load_dotenv()
+load_dotenv(find_dotenv())
 
 from reconhecimento_facial.face_detection import detect_faces
 from reconhecimento_facial.llm_service import generate_caption

@@ -8,9 +8,9 @@ from typing import Optional
 import numpy as np
 
 try:  # pragma: no cover - optional dependency
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv, find_dotenv
 
-    load_dotenv()
+    load_dotenv(find_dotenv())
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pass
 
