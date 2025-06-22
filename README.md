@@ -44,7 +44,7 @@ Você também pode executar comandos específicos diretamente pela CLI:
 python3 -m reconhecimento_facial.face_detection --image caminho/para/imagem.jpg --output saida.jpg
 python3 -m reconhecimento_facial.app detect --image caminho/para/imagem.jpg --model yolov8
 python3 -m reconhecimento_facial.recognition --webcam
-python3 -m reconhecimento_facial.whisper_translation --model base --chunk 5 --src pt --webcam
+python3 -m reconhecimento_facial.whisper_translation --model openai/whisper-large-v3-turbo --chunk 5 --src pt --webcam
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --src pt --expected "texto esperado"
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --transcribe --src pt
 ```
@@ -83,7 +83,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `HF_CAPTION_MODEL`: modelo de legenda (padrão: `nlpconnect/vit-gpt2-image-captioning`).
 - `OBSTRUCTION_MODEL_REPO`: modelo para detectar obstrução facial (padrão: `dima806/face_obstruction_image_detection`).
 - `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado nas funções de demografia e `analyze_face`.
-- `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio.
+- `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio (padrão: `openai/whisper-large-v3-turbo`).
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
 
@@ -97,7 +97,6 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - transformers
 - huggingface_hub
 - python-dotenv
-- openai-whisper
 - sounddevice
 
 ## Testes
