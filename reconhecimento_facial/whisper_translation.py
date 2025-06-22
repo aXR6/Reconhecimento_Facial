@@ -122,7 +122,9 @@ def translate_file(
     """Translate an audio file using Whisper and an optional translation model."""
 
     if target_lang == "en":
-        return _process_file(file_path, model_name, "translate", source_lang)
+        text = _process_file(file_path, model_name, "translate", source_lang)
+        if text:
+            return text
 
     text = _process_file(file_path, model_name, "transcribe", source_lang)
     if not text:
