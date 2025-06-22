@@ -124,7 +124,7 @@ def _load_model() -> None:
     if hf_hub_download is None or MTCNN is None:
         logger.error("Required dependencies not installed")
         return
-    from ..device import torch_device
+    from ..device import torch_device, set_device
 
     device = torch_device()
     try:
@@ -143,7 +143,18 @@ def _load_model() -> None:
         logger.error("failed to load facexformer model: %s", exc)
         return
 
-    model.to(device)
+    try:
+        model.to(device)
+    except Exception as exc:  # noqa: BLE001
+        if "out of memory" in str(exc).lower():
+            logger.error("GPU sem memoria. Usando CPU")
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            set_device("cpu")
+            device = "cpu"
+            model.to(device)
+        else:
+            raise
     model.eval()
     _model = model
     _device = device
@@ -173,7 +184,33 @@ def detect_demographics(image: Any) -> dict:
     }
     tasks = torch.tensor([4], device=_device)
 
-    (_, _, _, _, age_out, gender_out, race_out, _) = _model(tensor, labels, tasks)
+    try:
+        (_, _, _, _, age_out, gender_out, race_out, _) = _model(tensor, labels, tasks)
+    except Exception as exc:  # noqa: BLE001
+        if "out of memory" in str(exc).lower():
+            logger.error("GPU sem memoria. Migrando para CPU")
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            set_device("cpu")
+            _model.to("cpu")
+            global _device
+            _device = "cpu"
+            tensor = _prepare_face(image)
+            labels = {
+                "segmentation": torch.zeros((1, 224, 224), device=_device),
+                "lnm_seg": torch.zeros((1, 5, 2), device=_device),
+                "landmark": torch.zeros((1, 68, 2), device=_device),
+                "headpose": torch.zeros((1, 3), device=_device),
+                "attribute": torch.zeros((1, 40), device=_device),
+                "a_g_e": torch.zeros((1, 3), device=_device),
+                "visibility": torch.zeros((1, 29), device=_device),
+            }
+            tasks = torch.tensor([4], device=_device)
+            (_, _, _, _, age_out, gender_out, race_out, _) = _model(
+                tensor, labels, tasks
+            )
+        else:
+            raise
 
     age_idx = int(torch.argmax(age_out, dim=1).item())
     gender_idx = int(torch.argmax(gender_out, dim=1).item())
@@ -205,21 +242,48 @@ def analyze_face(image: Any) -> dict:
         "visibility": torch.zeros((1, 29), device=_device),
     }
 
+    def _run(tasks: torch.Tensor):
+        nonlocal tensor, labels
+        try:
+            return _model(tensor, labels, tasks)
+        except Exception as exc:  # noqa: BLE001
+            if "out of memory" in str(exc).lower():
+                logger.error("GPU sem memoria. Migrando para CPU")
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                set_device("cpu")
+                _model.to("cpu")
+                global _device
+                _device = "cpu"
+                tensor = _prepare_face(image)
+                labels = {
+                    "segmentation": torch.zeros((1, 224, 224), device=_device),
+                    "lnm_seg": torch.zeros((1, 5, 2), device=_device),
+                    "landmark": torch.zeros((1, 68, 2), device=_device),
+                    "headpose": torch.zeros((1, 3), device=_device),
+                    "attribute": torch.zeros((1, 40), device=_device),
+                    "a_g_e": torch.zeros((1, 3), device=_device),
+                    "visibility": torch.zeros((1, 29), device=_device),
+                }
+                tasks = tasks.to(_device)
+                return _model(tensor, labels, tasks)
+            raise
+
     result: dict[str, Any] = {}
 
     # segmentation mask
     tasks = torch.tensor([0], device=_device)
-    (_, _, _, _, _, _, _, seg) = _model(tensor, labels, tasks)
+    (_, _, _, _, _, _, _, seg) = _run(tasks)
     result["segmentation"] = seg.argmax(dim=1).squeeze(0).cpu().numpy().tolist()
 
     # landmarks
     tasks = torch.tensor([1], device=_device)
-    (lm, _, _, _, _, _, _, _) = _model(tensor, labels, tasks)
+    (lm, _, _, _, _, _, _, _) = _run(tasks)
     result["landmarks"] = lm.view(68, 2).cpu().tolist()
 
     # headpose
     tasks = torch.tensor([2], device=_device)
-    (_, hp, _, _, _, _, _, _) = _model(tensor, labels, tasks)
+    (_, hp, _, _, _, _, _, _) = _run(tasks)
     result["headpose"] = {
         "pitch": float(hp[0, 0].item()),
         "yaw": float(hp[0, 1].item()),
@@ -228,7 +292,7 @@ def analyze_face(image: Any) -> dict:
 
     # attributes
     tasks = torch.tensor([3], device=_device)
-    (_, _, attr, _, _, _, _, _) = _model(tensor, labels, tasks)
+    (_, _, attr, _, _, _, _, _) = _run(tasks)
     scores = attr.squeeze(0)
     attrs = {}
     for idx, name in enumerate(ATTRIBUTE_LABELS):
@@ -238,7 +302,7 @@ def analyze_face(image: Any) -> dict:
 
     # age/gender/race
     tasks = torch.tensor([4], device=_device)
-    (_, _, _, _, age_out, gender_out, race_out, _) = _model(tensor, labels, tasks)
+    (_, _, _, _, age_out, gender_out, race_out, _) = _run(tasks)
     age_idx = int(torch.argmax(age_out, dim=1).item())
     gender_idx = int(torch.argmax(gender_out, dim=1).item())
     race_idx = int(torch.argmax(race_out, dim=1).item())
@@ -253,7 +317,7 @@ def analyze_face(image: Any) -> dict:
 
     # visibility
     tasks = torch.tensor([5], device=_device)
-    (_, _, _, vis, _, _, _, _) = _model(tensor, labels, tasks)
+    (_, _, _, vis, _, _, _, _) = _run(tasks)
     result["visibility"] = int(vis.argmax(dim=1).item())
 
     return result
