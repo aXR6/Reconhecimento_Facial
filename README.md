@@ -101,9 +101,10 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 
 ## Testes
 
-Execute os testes automatizados com:
+Instale as dependências mínimas de testes e execute os testes automatizados com:
 
 ```bash
+pip install -r requirements-test.txt
 pytest
 ```
 

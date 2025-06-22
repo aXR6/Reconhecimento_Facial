@@ -35,4 +35,4 @@ face-app = "reconhecimento_facial.app:main"
 whisper-translate = "reconhecimento_facial.whisper_translation:main"
 
 [tool.pytest.ini_options]
-addopts = "-vv"
+addopts = "-p no:dash -vv"
