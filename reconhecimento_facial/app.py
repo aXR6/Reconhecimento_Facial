@@ -25,7 +25,6 @@ from reconhecimento_facial.recognition import (
     demographics_webcam,
     recognize_webcam_mediapipe,
 )
-from reconhecimento_facial.preload import preload_models
 from reconhecimento_facial.whisper_translation import (
     DEFAULT_WHISPER_MODEL,
     translate_microphone,
@@ -182,19 +181,8 @@ def _other_menu() -> None:
             _device_menu()
 
 
-def _download_models() -> None:
-    """Baixa todos os modelos utilizados pela aplicação."""
-    print("Baixando modelos. Aguarde...")
-    try:
-        preload_models()
-        print("Modelos baixados com sucesso")
-    except Exception as exc:  # noqa: BLE001
-        print(f"Erro ao baixar modelos: {exc}")
-
-
 def menu() -> None:
     main_opts = [
-        "Baixar modelos",
         "Detecção",
         "Reconhecimento",
         "Cadastrar pessoa (face_recognition)",
@@ -208,12 +196,10 @@ def menu() -> None:
             break
 
         if choice == main_opts[0]:
-            _download_models()
-        elif choice == main_opts[1]:
             _detection_menu()
-        elif choice == main_opts[2]:
+        elif choice == main_opts[1]:
             _recognition_menu()
-        elif choice == main_opts[3]:
+        elif choice == main_opts[2]:
             name = input("Nome da pessoa: ").strip()
             try:
                 if register_person_webcam(name):
@@ -222,7 +208,7 @@ def menu() -> None:
                     print("Erro ao cadastrar pessoa")
             except Exception as exc:
                 print(f"Erro ao cadastrar: {exc}")
-        elif choice == main_opts[4]:
+        elif choice == main_opts[3]:
             _other_menu()
 
 
