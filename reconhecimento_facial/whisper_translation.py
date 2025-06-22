@@ -207,12 +207,12 @@ def translate_microphone(
                 if buffer.shape[0] / samplerate >= chunk_seconds:
                     audio = buffer[:, 0]
                     try:
-                        task = "translate" if translate and target_lang == "en" else "transcribe"
-                        gen_kwargs = {"task": task, "language": source_lang}
-                        result = pipe(audio, generate_kwargs=gen_kwargs)
+                        result = pipe(
+                            audio, generate_kwargs={"task": "transcribe", "language": source_lang}
+                        )
                         text = result.get("text", "").strip()
                         if text:
-                            if translate and target_lang != "en":
+                            if translate and target_lang != source_lang:
                                 text = _translate_text(text, source_lang, target_lang)
                             if text:
                                 print(text)
