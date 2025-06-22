@@ -2,7 +2,16 @@ import os
 import sys
 import numpy as np
 import cv2
+import types
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+dummy_fx = types.ModuleType('facexformer')
+dummy_fx.analyze_face = lambda img: {}
+sys.modules['reconhecimento_facial.facexformer'] = dummy_fx
+dummy_dem = types.ModuleType('demographics_detection')
+dummy_dem.detect_demographics = lambda img: {}
+sys.modules['reconhecimento_facial.demographics_detection'] = dummy_dem
 
 from reconhecimento_facial.face_detection import detect_faces
 import reconhecimento_facial.face_detection as fd_mod
@@ -90,3 +99,36 @@ def test_detect_hf_increment_yolov8(monkeypatch, tmp_path):
         str(img_path), str(tmp_path / "out.jpg"), use_hf=True, hf_model="yolov8"
     )
     assert count == 1
+
+
+def test_detect_social_search(monkeypatch, tmp_path):
+    import types
+
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    img_path = tmp_path / "img.jpg"
+    cv2.imwrite(str(img_path), img)
+
+    class DummyCascade:
+        def detectMultiScale(self, *a, **k):
+            return np.array([[0, 0, 10, 10]])
+
+    monkeypatch.setattr(fd_mod.cv2, "CascadeClassifier", lambda *_: DummyCascade())
+
+    called = {}
+
+    def dummy_thr(target, args=(), kwargs=None, daemon=None):
+        called["args"] = args
+        target(*args)
+        return types.SimpleNamespace(start=lambda: None)
+
+    monkeypatch.setattr(fd_mod.threading, "Thread", dummy_thr)
+    monkeypatch.setattr(fd_mod, "_social_search_background", lambda *a: called.update({"bg": a}))
+
+    fd_mod.detect_faces(
+        str(img_path),
+        str(tmp_path / "out.jpg"),
+        social_search=True,
+        sites=["facebook"],
+    )
+
+    assert "bg" in called

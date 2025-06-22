@@ -74,7 +74,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - É possível escolher o idioma de entrada e o de saída para tradução.
-- Busca de perfis em redes sociais utilizando o `social_mapper` (via script `social-search`).
+- Busca de perfis em redes sociais utilizando o Social Mapper integrado (`social-search`).
 - Reconhecimento de rostos com busca automática em redes sociais usando a flag `--social-search`.
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
