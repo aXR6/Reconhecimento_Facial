@@ -47,7 +47,7 @@ def test_analyze_face(monkeypatch):
             'landmarks': [[0, 0]],
             'headpose': {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0},
             'segmentation': [[0]],
-            'attributes': {'Smiling': True},
+            'attributes': {'Sorrindo': True},
             'visibility': 1,
         }
 
