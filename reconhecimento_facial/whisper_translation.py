@@ -7,26 +7,56 @@ from typing import Optional
 
 import numpy as np
 
-try:
+try:  # pragma: no cover - optional dependency
     from dotenv import load_dotenv
+
     load_dotenv()
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pass
 
-try:
+try:  # pragma: no cover - optional dependency
     import sounddevice as sd
 except (ModuleNotFoundError, OSError):  # pragma: no cover - optional dependency
     sd = None
 
-try:
-    import whisper
+try:  # pragma: no cover - optional dependency
+    import torch
+    from transformers import (
+        AutoModelForSpeechSeq2Seq,
+        AutoProcessor,
+        pipeline as hf_pipeline,
+    )
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    whisper = None
+    hf_pipeline = None
 
 logger = logging.getLogger(__name__)
 
 # Default Whisper model used when none is provided
-DEFAULT_WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+DEFAULT_WHISPER_MODEL = os.getenv(
+    "WHISPER_MODEL", "openai/whisper-large-v3-turbo"
+)
+
+
+def _get_pipe(model_name: str):
+    """Return a Hugging Face ASR pipeline for ``model_name``."""
+    if hf_pipeline is None:
+        raise ImportError("transformers não instaladas")
+
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_name, torch_dtype=torch_dtype, low_cpu_mem_usage=True
+    )
+    model.to(device)
+    processor = AutoProcessor.from_pretrained(model_name)
+    return hf_pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        torch_dtype=torch_dtype,
+        device=device,
+    )
 
 
 def _process_file(
@@ -36,19 +66,19 @@ def _process_file(
     source_lang: Optional[str],
 ) -> str:
     """Run Whisper on ``file_path`` with the given task."""
-    if whisper is None:
-        logger.error("Dependências não instaladas: whisper")
+    if hf_pipeline is None:
+        logger.error("Dependências não instaladas: transformers")
         return ""
     try:
-        model = whisper.load_model(model_name)
+        pipe = _get_pipe(model_name)
     except Exception as exc:  # noqa: BLE001
         logger.error("Falha ao carregar modelo Whisper: %s", exc)
         return ""
-    kwargs = {"task": task, "fp16": False}
+    gen_kwargs = {"task": task}
     if source_lang:
-        kwargs["language"] = source_lang
+        gen_kwargs["language"] = source_lang
     try:
-        result = model.transcribe(file_path, **kwargs)
+        result = pipe(file_path, generate_kwargs=gen_kwargs)
     except Exception as exc:  # noqa: BLE001
         logger.error("Erro na transcrição: %s", exc)
         return ""
@@ -118,11 +148,11 @@ def translate_microphone(
     translate:
         When ``True`` translate the audio. Otherwise just transcribe.
     """
-    if whisper is None or sd is None:
-        logger.error("Depend\u00eancias n\u00e3o instaladas: whisper ou sounddevice")
+    if hf_pipeline is None or sd is None:
+        logger.error("Depend\u00eancias n\u00e3o instaladas: transformers ou sounddevice")
         return
     try:
-        model = whisper.load_model(model_name)
+        pipe = _get_pipe(model_name)
     except Exception as exc:  # noqa: BLE001
         logger.error("Falha ao carregar modelo Whisper: %s", exc)
         return
@@ -151,12 +181,8 @@ def translate_microphone(
                     audio = buffer[:, 0]
                     try:
                         task = "translate" if translate and target_lang == "en" else "transcribe"
-                        result = model.transcribe(
-                            audio,
-                            task=task,
-                            language=source_lang,
-                            fp16=False,
-                        )
+                        gen_kwargs = {"task": task, "language": source_lang}
+                        result = pipe(audio, generate_kwargs=gen_kwargs)
                         text = result.get("text", "").strip()
                         if text:
                             if translate and target_lang != "en":

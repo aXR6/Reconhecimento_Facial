@@ -26,7 +26,6 @@ dependencies = [
     "questionary",
     "face_recognition; platform_system != 'Windows'",  # optional
     "psycopg2-binary",
-    "openai-whisper",
     "sounddevice",
 ]
 
