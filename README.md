@@ -74,7 +74,7 @@ O programa principal (`app.py`) apresenta cinco categorias principais:
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - É possível escolher o idioma de entrada, traduzindo sempre para o inglês.
 
-Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`.
+Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
 
 ## Variáveis de ambiente
 
@@ -85,7 +85,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `FACEXFORMER_REPO`: repositório do FaceXFormer utilizado nas funções de demografia e `analyze_face`.
 - `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio.
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
-- `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py`.
+- `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
 
 ## Requisitos
 
