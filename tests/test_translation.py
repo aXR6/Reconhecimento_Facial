@@ -17,7 +17,8 @@ def test_translate_file(monkeypatch):
 def test_translate_file_other_lang(monkeypatch):
     dummy_pipe = lambda *a, **k: {"text": "hola"}
     monkeypatch.setattr(wt, "_get_pipe", lambda *a, **k: dummy_pipe)
-    assert wt.translate_file("foo.wav", source_lang="es", target_lang="fr") == ""
+    monkeypatch.setattr(wt, "_translate_text", lambda text, src, dst: "bonjour")
+    assert wt.translate_file("foo.wav", source_lang="es", target_lang="fr") == "bonjour"
 
 
 def test_transcribe_file(monkeypatch):
