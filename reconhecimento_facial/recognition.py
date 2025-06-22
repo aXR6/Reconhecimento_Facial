@@ -350,7 +350,21 @@ def recognize_webcam_mediapipe() -> None:
 
 
 def demographics_webcam() -> None:
-    """Display all FaceXFormer predictions using the webcam feed."""
+    """Recognize people and display FaceXFormer predictions using the webcam feed."""
+    if face_recognition is None:
+        logger.error("face_recognition not installed")
+        return
+
+    with get_conn() as conn:
+        if conn is None:
+            return
+        cur = conn.cursor()
+        cur.execute("SELECT name, embedding FROM people")
+        data = cur.fetchall()
+
+    known_names = [row[0] for row in data]
+    known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         logger.error("Nao foi possivel acessar a webcam")
@@ -360,10 +374,29 @@ def demographics_webcam() -> None:
         ret, frame = cap.read()
         if not ret:
             break
-        try:
-            dem = analyze_face(frame)
 
-            parts = []
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        locations = face_recognition.face_locations(rgb)
+        encodings = face_recognition.face_encodings(rgb, locations)
+
+        for idx, ((top, right, bottom, left), face_enc) in enumerate(zip(locations, encodings)):
+            name = "Unknown"
+            if known_encodings:
+                dists = face_recognition.face_distance(known_encodings, face_enc)
+                best = dists.argmin()
+                if dists[best] < 0.6:
+                    name = known_names[best]
+
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            crop = frame[top:bottom, left:right]
+
+            dem: dict[str, Any] = {}
+            try:
+                dem = analyze_face(crop)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("demographics error: %s", exc)
+
+            parts = [name]
             gender = dem.get("gender")
             age = dem.get("age")
             ethnicity = dem.get("ethnicity")
@@ -376,77 +409,48 @@ def demographics_webcam() -> None:
                 parts.append(ethnicity)
             if skin:
                 parts.append(skin)
+            info = ", ".join(parts)
+            cv2.putText(frame, info, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-            y = 30
-            if parts:
-                label = ", ".join(parts)
-                cv2.putText(
-                    frame,
-                    label,
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
-                y += 20
-
-            hp = dem.get("headpose")
-            if hp:
-                pose = f"pitch:{hp['pitch']:.1f} yaw:{hp['yaw']:.1f} roll:{hp['roll']:.1f}"
-                cv2.putText(
-                    frame,
-                    pose,
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2,
-                )
-                y += 20
-
-            attrs = dem.get("attributes")
-            if attrs:
-                positives = [k for k, v in attrs.items() if v]
-                if positives:
-                    cv2.putText(
-                        frame,
-                        ", ".join(positives[:5]),
-                        (10, y),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (0, 255, 0),
-                        1,
-                    )
+            if idx == 0:
+                y = bottom + 20
+                hp = dem.get("headpose")
+                if hp:
+                    pose = f"pitch:{hp['pitch']:.1f} yaw:{hp['yaw']:.1f} roll:{hp['roll']:.1f}"
+                    cv2.putText(frame, pose, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     y += 20
 
-            vis = dem.get("visibility")
-            if vis is not None:
-                cv2.putText(
-                    frame,
-                    f"visibility: {vis}",
-                    (10, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    1,
-                )
+                attrs = dem.get("attributes")
+                if attrs:
+                    positives = [k for k, v in attrs.items() if v]
+                    if positives:
+                        cv2.putText(
+                            frame,
+                            ", ".join(positives[:5]),
+                            (left, y),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (0, 255, 0),
+                            1,
+                        )
+                        y += 20
 
-            seg = dem.get("segmentation")
-            if seg is not None:
-                seg_img = np.array(seg, dtype=np.uint8)
-                seg_img = cv2.applyColorMap((seg_img * 20).astype(np.uint8), cv2.COLORMAP_JET)
-                cv2.imshow("segmentation", seg_img)
+                vis = dem.get("visibility")
+                if vis is not None:
+                    cv2.putText(frame, f"visibility: {vis}", (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-            landmarks = dem.get("landmarks")
-            if landmarks:
-                lm_img = np.zeros((224, 224, 3), dtype=np.uint8)
-                for x, z in landmarks:
-                    cv2.circle(lm_img, (int(x), int(z)), 1, (0, 255, 0), -1)
-                cv2.imshow("landmarks", lm_img)
+                seg = dem.get("segmentation")
+                if seg is not None:
+                    seg_img = np.array(seg, dtype=np.uint8)
+                    seg_img = cv2.applyColorMap((seg_img * 20).astype(np.uint8), cv2.COLORMAP_JET)
+                    cv2.imshow("segmentation", seg_img)
 
-        except Exception as exc:  # noqa: BLE001
-            logger.error("demographics error: %s", exc)
+                landmarks = dem.get("landmarks")
+                if landmarks:
+                    lm_img = np.zeros((224, 224, 3), dtype=np.uint8)
+                    for x, z in landmarks:
+                        cv2.circle(lm_img, (int(x), int(z)), 1, (0, 255, 0), -1)
+                    cv2.imshow("landmarks", lm_img)
 
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
