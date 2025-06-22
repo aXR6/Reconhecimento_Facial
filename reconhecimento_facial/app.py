@@ -38,8 +38,8 @@ _dst_lang = "en"
 
 
 def _language_menu() -> None:
-    """Allow user to choose the source language for translation."""
-    global _src_lang
+    """Allow user to choose the source and target languages for translation."""
+    global _src_lang, _dst_lang
     langs = {
         "Português": "pt",
         "English": "en",
@@ -50,6 +50,9 @@ def _language_menu() -> None:
     src = questionary.select("Idioma de entrada", choices=names).ask()
     if src:
         _src_lang = langs[src]
+    dst = questionary.select("Idioma de saída", choices=names).ask()
+    if dst:
+        _dst_lang = langs[dst]
 
 
 

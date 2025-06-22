@@ -72,7 +72,7 @@ O programa principal (`app.py`) apresenta cinco categorias principais:
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
-- É possível escolher o idioma de entrada, traduzindo sempre para o inglês.
+- É possível escolher o idioma de entrada e o de saída para tradução.
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
 
