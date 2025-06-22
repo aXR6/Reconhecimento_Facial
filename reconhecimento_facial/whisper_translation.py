@@ -53,7 +53,7 @@ def _get_pipe(model_name: str):
     if getattr(model, "generation_config", None) is not None:
         model.generation_config.forced_decoder_ids = None
     processor = AutoProcessor.from_pretrained(model_name)
-    return hf_pipeline(
+    pipe = hf_pipeline(
         "automatic-speech-recognition",
         model=model,
         tokenizer=processor.tokenizer,
@@ -61,6 +61,16 @@ def _get_pipe(model_name: str):
         torch_dtype=torch_dtype,
         device=device,
     )
+
+    original_generate = pipe.model.generate
+
+    def patched_generate(*args, **kwargs):  # noqa: D401 - wrapper for deprecation
+        if "inputs" in kwargs and "input_features" not in kwargs:
+            kwargs["input_features"] = kwargs.pop("inputs")
+        return original_generate(*args, **kwargs)
+
+    pipe.model.generate = patched_generate
+    return pipe
 
 
 def _process_file(
@@ -191,7 +201,11 @@ def translate_microphone(
 
     def callback(indata, frames, time, status):  # noqa: D401 - sounddevice callback
         if status:
-            logger.warning(status)
+            msg = str(status).lower()
+            if "overflow" in msg:
+                logger.debug(status)
+            else:
+                logger.warning(status)
         q.put(indata.copy())
 
     if stop_event is None:
