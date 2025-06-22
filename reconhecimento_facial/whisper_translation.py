@@ -48,6 +48,10 @@ def _get_pipe(model_name: str):
         model_name, torch_dtype=torch_dtype, low_cpu_mem_usage=True
     )
     model.to(device)
+    # Avoid warning when passing ``task=translate`` by clearing
+    # ``forced_decoder_ids`` from the generation config.
+    if getattr(model, "generation_config", None) is not None:
+        model.generation_config.forced_decoder_ids = None
     processor = AutoProcessor.from_pretrained(model_name)
     return hf_pipeline(
         "automatic-speech-recognition",
