@@ -132,13 +132,16 @@ def _load_model() -> None:
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to download facexformer weights: %s", exc)
         return
-    model = FaceXFormer().to(device)
+
+    model = FaceXFormer()
     try:
-        checkpoint = torch.load(weight_path, map_location=device)
+        checkpoint = torch.load(weight_path, map_location="cpu")
         model.load_state_dict(checkpoint["state_dict_backbone"])
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to load facexformer model: %s", exc)
         return
+
+    model.to(device)
     model.eval()
     _model = model
     _device = device
