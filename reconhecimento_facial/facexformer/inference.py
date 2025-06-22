@@ -168,6 +168,7 @@ def detect_demographics(image: Any) -> dict:
     image:
         Path to an image or an array (BGR) representing the image.
     """
+    global _device
     _load_model()
     if _model is None:
         raise RuntimeError("FaceXFormer model not available")
@@ -193,7 +194,6 @@ def detect_demographics(image: Any) -> dict:
                 torch.cuda.empty_cache()
             set_device("cpu")
             _model.to("cpu")
-            global _device
             _device = "cpu"
             tensor = _prepare_face(image)
             labels = {
@@ -243,6 +243,7 @@ def analyze_face(image: Any) -> dict:
     }
 
     def _run(tasks: torch.Tensor):
+        global _device
         nonlocal tensor, labels
         try:
             return _model(tensor, labels, tasks)
@@ -253,7 +254,6 @@ def analyze_face(image: Any) -> dict:
                     torch.cuda.empty_cache()
                 set_device("cpu")
                 _model.to("cpu")
-                global _device
                 _device = "cpu"
                 tensor = _prepare_face(image)
                 labels = {
