@@ -193,18 +193,24 @@ def register_person_webcam(
 def _social_search_background(
     img_path: str, name: str, sites: Iterable[str], db_path: str | None
 ) -> None:
-    """Run social search in a background thread and notify when a match is found."""
+    """Run social search in a background thread and report progress."""
     try:
-        out_dir = run_social_search([img_path], name=name, sites=sites, db_path=db_path)
-        for csv in Path(out_dir).glob("*.csv"):
-            try:
-                with open(csv) as fh:
-                    lines = fh.readlines()
-                if len(lines) > 1:
-                    print(f"Perfil encontrado para {name} em {csv}")
-                    break
-            except Exception:  # noqa: BLE001
-                continue
+        for site in sites:
+            print(f"Buscando rosto em {site}...")
+            out_dir = run_social_search(
+                [img_path], name=name, sites=[site], db_path=db_path
+            )
+            print(f"Busca em {site} finalizada")
+            for csv in Path(out_dir).glob("*.csv"):
+                try:
+                    with open(csv) as fh:
+                        lines = fh.readlines()
+                    if len(lines) > 1:
+                        print(f"Perfil encontrado para {name} em {csv}")
+                        break
+                except Exception:  # noqa: BLE001
+                    continue
+        print("Busca social finalizada")
     except Exception as exc:  # pragma: no cover - best effort
         logger.error("social search error: %s", exc)
     finally:
@@ -336,6 +342,17 @@ def recognize_webcam(
                 (0, 255, 0),
                 2,
             )
+
+            if social_search and name != "Unknown" and name not in seen:
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                cv2.imwrite(tmp.name, crop)
+                thr = threading.Thread(
+                    target=_social_search_background,
+                    args=(tmp.name, name, _sites, db_path),
+                    daemon=True,
+                )
+                thr.start()
+                seen.add(name)
             if social_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
@@ -460,7 +477,12 @@ def recognize_webcam_mediapipe(
     cv2.destroyAllWindows()
 
 
-def demographics_webcam() -> None:
+def demographics_webcam(
+    *,
+    social_search: bool = False,
+    sites: Iterable[str] | None = None,
+    db_path: str | None = None,
+) -> None:
     """Recognize people and display FaceXFormer predictions using the webcam feed."""
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -475,6 +497,9 @@ def demographics_webcam() -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
+    seen: set[str] = set()
+    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
