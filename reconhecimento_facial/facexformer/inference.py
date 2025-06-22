@@ -34,8 +34,8 @@ AGE_LABELS = [
     "50-59",
     "60+",
 ]
-GENDER_LABELS = ["male", "female"]
-RACE_LABELS = ["white", "black", "asian", "indian", "other"]
+GENDER_LABELS = ["masculino", "feminino"]
+RACE_LABELS = ["branco", "negro", "asiático", "indiano", "outro"]
 
 # 40 CelebA attribute labels used by FaceXFormer
 ATTRIBUTE_LABELS = [
