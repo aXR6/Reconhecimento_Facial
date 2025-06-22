@@ -152,12 +152,20 @@ def register_person(name: str, image_path: str) -> bool:
     return True
 
 
-def register_person_webcam(name: str) -> bool:
+def register_person_webcam(
+    name: str,
+    *,
+    social_search: bool = False,
+    sites: Iterable[str] | None = None,
+    repo_path: str | None = None,
+) -> bool:
     """Capture an image from the webcam and register the person.
 
-    The function returns ``True`` only when both the capture and the database
-    insertion succeed. This behaviour ensures that callers do not display a
-    successful message when the registration actually failed.
+    When ``social_search`` is ``True``, the captured face is also searched on the
+    configured social networks in the background. The function returns ``True``
+    only when both the capture and the database insertion succeed. This
+    behaviour ensures that callers do not display a successful message when the
+    registration actually failed.
     """
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
     if not capture_from_webcam(tmp):
@@ -165,6 +173,14 @@ def register_person_webcam(name: str) -> bool:
     try:
         ok = register_person(name, tmp)
         if ok:
+            if social_search:
+                _sites = list(sites) if sites else ["facebook"]
+                thr = threading.Thread(
+                    target=_social_search_background,
+                    args=(tmp, name, _sites, repo_path),
+                    daemon=True,
+                )
+                thr.start()
             print("Cadastro salvo com sucesso")
         return ok
     finally:

@@ -76,6 +76,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - É possível escolher o idioma de entrada e o de saída para tradução.
 - Busca de perfis em redes sociais utilizando o Social Mapper integrado (`social-search`).
 - Reconhecimento de rostos com busca automática em redes sociais usando a flag `--social-search`.
+- Cadastro de pessoas pela webcam com opção de buscar o rosto nas redes sociais.
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
 
