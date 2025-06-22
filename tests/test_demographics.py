@@ -54,6 +54,7 @@ def test_analyze_face(monkeypatch):
     dummy.analyze_face = _analyze
     dummy.detect_demographics = lambda img: {}
     monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
+    sys.modules.pop('reconhecimento_facial.facexformer', None)
     from reconhecimento_facial.facexformer import analyze_face
 
     result = analyze_face('img.jpg')
