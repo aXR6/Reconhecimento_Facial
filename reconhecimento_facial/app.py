@@ -201,8 +201,11 @@ def menu() -> None:
             _recognition_menu()
         elif choice == main_opts[2]:
             name = input("Nome da pessoa: ").strip()
+            social = questionary.confirm(
+                "Buscar rosto nas redes sociais?"
+            ).ask()
             try:
-                if register_person_webcam(name):
+                if register_person_webcam(name, social_search=bool(social)):
                     time.sleep(2)
                 else:
                     print("Erro ao cadastrar pessoa")
