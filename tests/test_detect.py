@@ -6,12 +6,12 @@ import types
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-dummy_fx = types.ModuleType('facexformer')
+dummy_fx = types.ModuleType("facexformer")
 dummy_fx.analyze_face = lambda img: {}
-sys.modules['reconhecimento_facial.facexformer'] = dummy_fx
-dummy_dem = types.ModuleType('demographics_detection')
+sys.modules["reconhecimento_facial.facexformer"] = dummy_fx
+dummy_dem = types.ModuleType("demographics_detection")
 dummy_dem.detect_demographics = lambda img: {}
-sys.modules['reconhecimento_facial.demographics_detection'] = dummy_dem
+sys.modules["reconhecimento_facial.demographics_detection"] = dummy_dem
 
 from reconhecimento_facial.face_detection import detect_faces
 import reconhecimento_facial.face_detection as fd_mod
@@ -122,7 +122,9 @@ def test_detect_social_search(monkeypatch, tmp_path):
         return types.SimpleNamespace(start=lambda: None)
 
     monkeypatch.setattr(fd_mod.threading, "Thread", dummy_thr)
-    monkeypatch.setattr(fd_mod, "_social_search_background", lambda *a: called.update({"bg": a}))
+    monkeypatch.setattr(
+        fd_mod, "_social_search_background", lambda *a: called.update({"bg": a})
+    )
 
     fd_mod.detect_faces(
         str(img_path),

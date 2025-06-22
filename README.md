@@ -48,7 +48,7 @@ python3 -m reconhecimento_facial.recognition --image foto.jpg --social-search --
 python3 -m reconhecimento_facial.whisper_translation --model openai/whisper-large-v3-turbo --chunk 5 --src pt --webcam
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --src pt --expected "texto esperado"
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --transcribe --src pt
-python3 -m reconhecimento_facial.social_search --image foto.jpg --site facebook --site instagram
+python3 -m reconhecimento_facial.social_search --image foto.jpg --db caminho/para/db --site facebook --site instagram
 ```
 
 ## Organização dos menus
@@ -71,14 +71,16 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
+- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - É possível escolher o idioma de entrada e o de saída para tradução.
-- Busca de perfis em redes sociais utilizando o Social Mapper integrado (`social-search`).
+- Busca de perfis em imagens locais através do recurso `social-search`.
 - Reconhecimento de rostos com busca automática em redes sociais usando a flag `--social-search`.
 - Cadastro de pessoas pela webcam com opção de buscar o rosto nas redes sociais.
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
+- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 
 ## Variáveis de ambiente
 
@@ -90,15 +92,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio (padrão: `openai/whisper-large-v3-turbo`).
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
-- `FACEBOOK_USERNAME` e `FACEBOOK_PASSWORD`: credenciais do Facebook para o Social Mapper.
-- `TWITTER_USERNAME` e `TWITTER_PASSWORD`: credenciais do Twitter.
-- `INSTAGRAM_USERNAME` e `INSTAGRAM_PASSWORD`: credenciais do Instagram.
-- `LINKEDIN_USERNAME` e `LINKEDIN_PASSWORD`: credenciais do LinkedIn.
-- `GOOGLE_USERNAME` e `GOOGLE_PASSWORD`: credenciais do Google.
-- `VK_USERNAME` e `VK_PASSWORD`: credenciais do VKontakte.
-- `WEIBO_USERNAME` e `WEIBO_PASSWORD`: credenciais do Weibo.
-- `DOUBAN_USERNAME` e `DOUBAN_PASSWORD`: credenciais do Douban.
-- `PINTEREST_USERNAME` e `PINTEREST_PASSWORD`: credenciais do Pinterest.
+- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 
 ## Requisitos
 
