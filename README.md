@@ -34,7 +34,7 @@ Para utilizar o menu interativo:
 python3 -m reconhecimento_facial.app
 ```
 
-Logo na primeira execução, escolha **Baixar modelos** para realizar o download de todos eles.
+Os modelos necessários são baixados automaticamente na primeira vez em que cada funcionalidade é utilizada.
 
 Na seção **Outros** é possível escolher o dispositivo de processamento (CPU ou GPU).
 
@@ -51,13 +51,12 @@ python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.w
 
 ## Organização dos menus
 
-O programa principal (`app.py`) apresenta cinco categorias principais:
+O programa principal (`app.py`) apresenta quatro categorias principais:
 
-1. **Baixar modelos** – efetua o download de todos os modelos de uma só vez.
-2. **Detecção** – identifica rostos (inclusive via webcam) ou obstruções nas imagens.
-3. **Reconhecimento** – para realizar reconhecimento facial ou exibir demografia via webcam.
-4. **Cadastrar pessoa** – registra uma nova pessoa utilizando a webcam.
-5. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
+1. **Detecção** – identifica rostos (inclusive via webcam) ou obstruções nas imagens.
+2. **Reconhecimento** – para realizar reconhecimento facial ou exibir demografia via webcam.
+3. **Cadastrar pessoa** – registra uma nova pessoa utilizando a webcam.
+4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
 
 ## Funcionalidades
 
