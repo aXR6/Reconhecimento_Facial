@@ -133,11 +133,11 @@ def _recognition_menu() -> None:
             break
         _language_menu()
         if choice == options[0]:
-            _run_with_translation(recognize_webcam)
+            _run_with_translation(lambda: recognize_webcam(social_search=True))
         elif choice == options[1]:
-            _run_with_translation(recognize_webcam_mediapipe)
+            _run_with_translation(lambda: recognize_webcam_mediapipe(social_search=True))
         elif choice == options[2]:
-            _run_with_translation(demographics_webcam)
+            _run_with_translation(lambda: demographics_webcam(social_search=True))
 
 
 
