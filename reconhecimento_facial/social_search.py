@@ -34,8 +34,11 @@ def run_social_search(
     sites: Iterable[str] = ("facebook",),
     fast: bool = True,
     repo_path: str | None = None,
-) -> None:
-    """Run social_mapper to search for a face on social networks."""
+) -> Path:
+    """Run social_mapper to search for a face on social networks.
+
+    Returns the path to the ``SM-Results`` directory created by the tool.
+    """
     repo = ensure_repo(repo_path)
     img_dir = repo / "input-images"
     if img_dir.exists():
@@ -62,6 +65,7 @@ def run_social_search(
 
     logger.info("Running social_mapper: %s", " ".join(cmd))
     subprocess.run(cmd, check=True, cwd=str(repo))
+    return repo / "SM-Results"
 
 
 def main(argv: Sequence[str] | None = None) -> None:
