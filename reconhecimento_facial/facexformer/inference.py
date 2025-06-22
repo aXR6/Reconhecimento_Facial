@@ -1,5 +1,6 @@
 import logging
 import os
+import inspect
 from typing import Any
 
 import numpy as np
@@ -136,7 +137,8 @@ def _load_model() -> None:
     model = FaceXFormer()
     try:
         checkpoint = torch.load(weight_path, map_location="cpu")
-        model.load_state_dict(checkpoint["state_dict_backbone"])
+        kwargs = {"assign": True} if "assign" in inspect.signature(model.load_state_dict).parameters else {}
+        model.load_state_dict(checkpoint["state_dict_backbone"], **kwargs)
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to load facexformer model: %s", exc)
         return
