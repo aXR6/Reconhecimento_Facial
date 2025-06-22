@@ -1,84 +1,91 @@
 import argparse
+import csv
 import logging
 import os
-import shutil
-import subprocess
-import sys
+import tempfile
 from pathlib import Path
 from typing import Iterable, Sequence
 
+import numpy as np
+
+try:  # pragma: no cover - optional dependency
+    import face_recognition
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    face_recognition = None
+
 logger = logging.getLogger(__name__)
 
-SOCIAL_MAPPER_REPO = "https://github.com/Greenwolf/social_mapper"
-DEFAULT_CLONE_DIR = Path.home() / ".social_mapper"
+DEFAULT_DB_DIR = Path(os.getenv("SOCIAL_DB_PATH", Path.home() / ".social_db"))
+THRESHOLD = 0.6
 
 
-def _clone_repo(dest: Path) -> Path:
-    """Clone the social_mapper repository if not present."""
-    if (dest / "social_mapper.py").exists():
-        return dest
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    logger.info("Cloning social_mapper into %s", dest)
-    subprocess.run(["git", "clone", SOCIAL_MAPPER_REPO, str(dest)], check=True)
-    return dest
-
-
-def ensure_repo(path: str | None = None) -> Path:
-    path = Path(path or os.environ.get("SOCIAL_MAPPER_PATH", DEFAULT_CLONE_DIR))
-    return _clone_repo(path)
+def _get_encoding(image: str) -> np.ndarray | None:
+    if face_recognition is None:
+        return None
+    img = face_recognition.load_image_file(image)
+    enc = face_recognition.face_encodings(img)
+    return enc[0] if enc else None
 
 
 def run_social_search(
     images: Sequence[str],
     name: str | None = None,
     sites: Iterable[str] = ("facebook",),
-    fast: bool = True,
-    repo_path: str | None = None,
+    fast: bool = True,  # noqa: D417 - kept for backward compatibility
+    db_path: str | None = None,
 ) -> Path:
-    """Run social_mapper to search for a face on social networks.
+    """Search for matching faces in local directories for each site.
 
-    Returns the path to the ``SM-Results`` directory created by the tool.
+    Returns the path to a temporary directory containing CSV files with matches.
     """
-    repo = ensure_repo(repo_path)
-    img_dir = repo / "input-images"
-    if img_dir.exists():
-        shutil.rmtree(img_dir)
-    img_dir.mkdir(parents=True, exist_ok=True)
+    base_dir = Path(db_path or DEFAULT_DB_DIR)
+    out_dir = Path(tempfile.mkdtemp(prefix="social_search_"))
 
-    for img in images:
-        shutil.copy(img, img_dir)
-
-    cmd = [
-        sys.executable,
-        str(repo / "social_mapper.py"),
-        "-f",
-        "imagefolder",
-        "-i",
-        str(img_dir),
-        "-m",
-        "fast" if fast else "accurate",
-    ]
     for site in sites:
-        cmd.append(f"--{site}")
-    if name:
-        cmd.extend(["-n", name])
+        site_dir = base_dir / site
+        if not site_dir.exists():
+            logger.warning("Directory %s not found", site_dir)
+            continue
+        results = []
+        for img in images:
+            enc = _get_encoding(img)
+            if enc is None:
+                continue
+            for file in site_dir.glob("*"):
+                if not file.is_file():
+                    continue
+                db_enc = _get_encoding(str(file))
+                if db_enc is None:
+                    continue
+                dist = float(np.linalg.norm(db_enc - enc))
+                if dist < THRESHOLD:
+                    results.append({"image": str(file), "distance": dist})
+        if results:
+            csv_path = out_dir / f"{site}_{name or 'results'}.csv"
+            with open(csv_path, "w", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=["image", "distance"])
+                writer.writeheader()
+                writer.writerows(results)
+    return out_dir
 
-    logger.info("Running social_mapper: %s", " ".join(cmd))
-    subprocess.run(cmd, check=True, cwd=str(repo))
-    return repo / "SM-Results"
 
-
-def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Search social networks for a face")
-    parser.add_argument("--image", action="append", required=True, help="Image to search")
+def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI helper
+    parser = argparse.ArgumentParser(description="Search local images for a face")
+    parser.add_argument(
+        "--image", action="append", required=True, help="Image to search"
+    )
     parser.add_argument("--name", help="Person name")
-    parser.add_argument("--site", action="append", default=["facebook"], help="Site to search (facebook, twitter, instagram, etc.)")
-    parser.add_argument("--accurate", action="store_true", help="Use accurate mode instead of fast")
-    parser.add_argument("--repo", help="Path to social_mapper repository")
+    parser.add_argument(
+        "--site",
+        action="append",
+        default=["facebook"],
+        help="Site folder to search (facebook, twitter, etc.)",
+    )
+    parser.add_argument("--db", help="Path to local image database")
     args = parser.parse_args(argv)
 
-    run_social_search(args.image, args.name, args.site, not args.accurate, args.repo)
+    run_social_search(args.image, args.name, args.site, True, args.db)
 
 
-if __name__ == "__main__":  # pragma: no cover - CLI helper
+if __name__ == "__main__":
     main()

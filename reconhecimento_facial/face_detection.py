@@ -14,11 +14,13 @@ if __package__ is None or __package__ == "":
 
 try:
     from dotenv import load_dotenv, find_dotenv
+
     load_dotenv(find_dotenv())
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pass
 
 import cv2
+
 try:
     from huggingface_hub import hf_hub_download
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
@@ -55,7 +57,7 @@ def detect_faces(
     recognized: Optional[List[str]] = None,
     social_search: bool = False,
     sites: Iterable[str] | None = None,
-    repo_path: str | None = None,
+    db_path: str | None = None,
 ) -> int | Dict[str, List[int]]:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
@@ -83,7 +85,7 @@ def detect_faces(
     total_faces = len(faces)
 
     boxes = []
-    for (x, y, w, h) in faces:
+    for x, y, w, h in faces:
         if blur:
             roi = img[y : y + h, x : x + w]
             roi = cv2.GaussianBlur(roi, (99, 99), 30)
@@ -129,9 +131,9 @@ def detect_faces(
                         w = int(box.width * img.shape[1])
                         h = int(box.height * img.shape[0])
                         if blur:
-                            roi = img[y:y + h, x:x + w]
+                            roi = img[y : y + h, x : x + w]
                             roi = cv2.GaussianBlur(roi, (99, 99), 30)
-                            img[y:y + h, x:x + w] = roi
+                            img[y : y + h, x : x + w] = roi
                         else:
                             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
                         boxes.append([int(x), int(y), int(w), int(h)])
@@ -142,6 +144,7 @@ def detect_faces(
     if recognized is None:
         try:
             from reconhecimento_facial.recognition import recognize_faces
+
             recognized = recognize_faces(image_path)
         except Exception as exc:  # noqa: BLE001
             logger.error("Falha ao reconhecer rostos: %s", exc)
@@ -165,13 +168,14 @@ def detect_faces(
                 name = recognized[idx]
             thr = threading.Thread(
                 target=_social_search_background,
-                args=(tmp.name, name, _sites, repo_path),
+                args=(tmp.name, name, _sites, db_path),
                 daemon=True,
             )
             thr.start()
     if save_db:
         try:
             from reconhecimento_facial.db import save_detection
+
             save_detection(
                 image_path,
                 total_faces,
@@ -197,7 +201,7 @@ def detect_faces_video(
     *,
     social_search: bool = False,
     sites: Iterable[str] | None = None,
-    repo_path: str | None = None,
+    db_path: str | None = None,
 ) -> None:
     """Processa um vídeo ou webcam detectando rostos.
 
@@ -228,14 +232,14 @@ def detect_faces_video(
             as_json=True,
             social_search=social_search,
             sites=sites,
-            repo_path=repo_path,
+            db_path=db_path,
         )
         processed = cv2.imread(tmp)
         if show_info:
             try:
                 from .demographics_detection import detect_demographics
 
-                for (x, y, w, h) in res.get("boxes", []):
+                for x, y, w, h in res.get("boxes", []):
                     crop = processed[y : y + h, x : x + w]
                     label = ""
                     info = detect_demographics(crop)
@@ -298,12 +302,20 @@ def main() -> None:
     )
     parser.add_argument("--show", action="store_true", help="Exibe imagem")
     parser.add_argument("--blur", action="store_true", help="Desfoca faces")
-    parser.add_argument("--info", action="store_true", help="Exibe informacoes sobre as faces")
+    parser.add_argument(
+        "--info", action="store_true", help="Exibe informacoes sobre as faces"
+    )
     parser.add_argument("--json", action="store_true", help="Retorna JSON")
-    parser.add_argument("--save-db", action="store_true", help="Salva resultado no banco")
-    parser.add_argument("--social-search", action="store_true", help="Busca rostos nas redes sociais")
-    parser.add_argument("--site", action="append", default=["facebook"], help="Rede social para buscar")
-    parser.add_argument("--repo", help="Diretório do social_mapper")
+    parser.add_argument(
+        "--save-db", action="store_true", help="Salva resultado no banco"
+    )
+    parser.add_argument(
+        "--social-search", action="store_true", help="Busca rostos nas redes sociais"
+    )
+    parser.add_argument(
+        "--site", action="append", default=["facebook"], help="Rede social para buscar"
+    )
+    parser.add_argument("--db", help="Diretório com imagens para busca social")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -320,7 +332,7 @@ def main() -> None:
                 show_info=args.info,
                 social_search=args.social_search,
                 sites=args.site,
-                repo_path=args.repo,
+                db_path=args.db,
             )
             qtd = None
         else:
@@ -335,7 +347,7 @@ def main() -> None:
                 save_db=args.save_db,
                 social_search=args.social_search,
                 sites=args.site,
-                repo_path=args.repo,
+                db_path=args.db,
             )
     except FileNotFoundError as exc:
         logger.error(exc)

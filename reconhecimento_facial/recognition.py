@@ -45,7 +45,9 @@ def _patch_face_recognition_models() -> None:
     module.face_recognition_model_location = lambda: _resource(
         "dlib_face_recognition_resnet_model_v1.dat"
     )
-    module.cnn_face_detector_model_location = lambda: _resource("mmod_human_face_detector.dat")
+    module.cnn_face_detector_model_location = lambda: _resource(
+        "mmod_human_face_detector.dat"
+    )
 
     sys.modules["face_recognition_models"] = module
 
@@ -157,7 +159,7 @@ def register_person_webcam(
     *,
     social_search: bool = False,
     sites: Iterable[str] | None = None,
-    repo_path: str | None = None,
+    db_path: str | None = None,
 ) -> bool:
     """Capture an image from the webcam and register the person.
 
@@ -177,7 +179,7 @@ def register_person_webcam(
                 _sites = list(sites) if sites else ["facebook"]
                 thr = threading.Thread(
                     target=_social_search_background,
-                    args=(tmp, name, _sites, repo_path),
+                    args=(tmp, name, _sites, db_path),
                     daemon=True,
                 )
                 thr.start()
@@ -189,11 +191,11 @@ def register_person_webcam(
 
 
 def _social_search_background(
-    img_path: str, name: str, sites: Iterable[str], repo_path: str | None
+    img_path: str, name: str, sites: Iterable[str], db_path: str | None
 ) -> None:
     """Run social search in a background thread and notify when a match is found."""
     try:
-        out_dir = run_social_search([img_path], name=name, sites=sites, repo_path=repo_path)
+        out_dir = run_social_search([img_path], name=name, sites=sites, db_path=db_path)
         for csv in Path(out_dir).glob("*.csv"):
             try:
                 with open(csv) as fh:
@@ -243,7 +245,7 @@ def recognize_faces(image_path: str) -> list[str]:
 def recognize_faces_social(
     image_path: str,
     sites: Iterable[str] | None = None,
-    repo_path: str | None = None,
+    db_path: str | None = None,
 ) -> list[str]:
     """Recognize faces and start social search in the background."""
     names = recognize_faces(image_path)
@@ -252,7 +254,7 @@ def recognize_faces_social(
         for name in names:
             thr = threading.Thread(
                 target=_social_search_background,
-                args=(image_path, name, _sites, repo_path),
+                args=(image_path, name, _sites, db_path),
                 daemon=True,
             )
             thr.start()
@@ -260,7 +262,10 @@ def recognize_faces_social(
 
 
 def recognize_webcam(
-    *, social_search: bool = False, sites: Iterable[str] | None = None, repo_path: str | None = None
+    *,
+    social_search: bool = False,
+    sites: Iterable[str] | None = None,
+    db_path: str | None = None,
 ) -> None:
     """Captura a webcam e exibe rostos identificados em tempo real.
 
@@ -336,7 +341,7 @@ def recognize_webcam(
                 cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
                     target=_social_search_background,
-                    args=(tmp.name, name, _sites, repo_path),
+                    args=(tmp.name, name, _sites, db_path),
                     daemon=True,
                 )
                 thr.start()
@@ -349,7 +354,10 @@ def recognize_webcam(
 
 
 def recognize_webcam_mediapipe(
-    *, social_search: bool = False, sites: Iterable[str] | None = None, repo_path: str | None = None
+    *,
+    social_search: bool = False,
+    sites: Iterable[str] | None = None,
+    db_path: str | None = None,
 ) -> None:
     """Captura a webcam usando MediaPipe para detecção e identifica rostos.
 
@@ -440,7 +448,7 @@ def recognize_webcam_mediapipe(
                 cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
                     target=_social_search_background,
-                    args=(tmp.name, name, _sites, repo_path),
+                    args=(tmp.name, name, _sites, db_path),
                     daemon=True,
                 )
                 thr.start()
@@ -482,7 +490,9 @@ def demographics_webcam() -> None:
         locations = face_recognition.face_locations(rgb)
         encodings = face_recognition.face_encodings(rgb, locations)
 
-        for idx, ((top, right, bottom, left), face_enc) in enumerate(zip(locations, encodings)):
+        for idx, ((top, right, bottom, left), face_enc) in enumerate(
+            zip(locations, encodings)
+        ):
             name = "Unknown"
             if known_encodings:
                 dists = face_recognition.face_distance(known_encodings, face_enc)
@@ -513,14 +523,30 @@ def demographics_webcam() -> None:
             if skin:
                 parts.append(skin)
             info = ", ".join(parts)
-            cv2.putText(frame, info, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                info,
+                (left, top - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+            )
 
             if idx == 0:
                 y = bottom + 20
                 hp = dem.get("headpose")
                 if hp:
                     pose = f"pitch:{hp['pitch']:.1f} yaw:{hp['yaw']:.1f} roll:{hp['roll']:.1f}"
-                    cv2.putText(frame, pose, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    cv2.putText(
+                        frame,
+                        pose,
+                        (left, y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2,
+                    )
                     y += 20
 
                 attrs = dem.get("attributes")
@@ -540,12 +566,22 @@ def demographics_webcam() -> None:
 
                 vis = dem.get("visibility")
                 if vis is not None:
-                    cv2.putText(frame, f"visibility: {vis}", (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                    cv2.putText(
+                        frame,
+                        f"visibility: {vis}",
+                        (left, y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        1,
+                    )
 
                 seg = dem.get("segmentation")
                 if seg is not None:
                     seg_img = np.array(seg, dtype=np.uint8)
-                    seg_img = cv2.applyColorMap((seg_img * 20).astype(np.uint8), cv2.COLORMAP_JET)
+                    seg_img = cv2.applyColorMap(
+                        (seg_img * 20).astype(np.uint8), cv2.COLORMAP_JET
+                    )
                     cv2.imshow("segmentation", seg_img)
 
                 landmarks = dem.get("landmarks")
@@ -568,8 +604,12 @@ if __name__ == "__main__":  # pragma: no cover - CLI helper
     parser = argparse.ArgumentParser(description="Reconhecimento facial")
     parser.add_argument("--webcam", action="store_true", help="Usa webcam")
     parser.add_argument("--image", help="Imagem para reconhecer", nargs="?")
-    parser.add_argument("--social-search", action="store_true", help="Buscar em redes sociais")
-    parser.add_argument("--site", action="append", default=["facebook"], help="Rede social para buscar")
+    parser.add_argument(
+        "--social-search", action="store_true", help="Buscar em redes sociais"
+    )
+    parser.add_argument(
+        "--site", action="append", default=["facebook"], help="Rede social para buscar"
+    )
     args = parser.parse_args()
 
     if args.webcam:
