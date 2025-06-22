@@ -89,6 +89,15 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio (padrão: `openai/whisper-large-v3-turbo`).
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
+- `FACEBOOK_USERNAME` e `FACEBOOK_PASSWORD`: credenciais do Facebook para o Social Mapper.
+- `TWITTER_USERNAME` e `TWITTER_PASSWORD`: credenciais do Twitter.
+- `INSTAGRAM_USERNAME` e `INSTAGRAM_PASSWORD`: credenciais do Instagram.
+- `LINKEDIN_USERNAME` e `LINKEDIN_PASSWORD`: credenciais do LinkedIn.
+- `GOOGLE_USERNAME` e `GOOGLE_PASSWORD`: credenciais do Google.
+- `VK_USERNAME` e `VK_PASSWORD`: credenciais do VKontakte.
+- `WEIBO_USERNAME` e `WEIBO_PASSWORD`: credenciais do Weibo.
+- `DOUBAN_USERNAME` e `DOUBAN_PASSWORD`: credenciais do Douban.
+- `PINTEREST_USERNAME` e `PINTEREST_PASSWORD`: credenciais do Pinterest.
 
 ## Requisitos
 
