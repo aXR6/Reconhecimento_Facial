@@ -23,8 +23,9 @@ def test_run_social_search(monkeypatch, tmp_path):
     img = tmp_path / "img.jpg"
     img.write_text("dummy")
 
-    ss.run_social_search([str(img)], sites=['facebook'])
+    out = ss.run_social_search([str(img)], sites=['facebook'])
 
     assert 'social_mapper.py' in called['cmd'][1]
     assert called['cwd'] == str(tmp_path)
+    assert out == tmp_path / 'SM-Results'
 

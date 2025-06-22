@@ -2,6 +2,10 @@ import logging
 import numpy as np
 import sys
 import types
+import threading
+import tempfile
+from pathlib import Path
+from typing import Iterable, Any
 from importlib.util import find_spec
 
 import cv2
@@ -56,6 +60,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 from reconhecimento_facial.db import get_conn, init_db
 from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face
+from reconhecimento_facial.social_search import run_social_search
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +172,31 @@ def register_person_webcam(name: str) -> bool:
             os.remove(tmp)
 
 
+def _social_search_background(
+    img_path: str, name: str, sites: Iterable[str], repo_path: str | None
+) -> None:
+    """Run social search in a background thread and notify when a match is found."""
+    try:
+        out_dir = run_social_search([img_path], name=name, sites=sites, repo_path=repo_path)
+        for csv in Path(out_dir).glob("*.csv"):
+            try:
+                with open(csv) as fh:
+                    lines = fh.readlines()
+                if len(lines) > 1:
+                    print(f"Perfil encontrado para {name} em {csv}")
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # pragma: no cover - best effort
+        logger.error("social search error: %s", exc)
+    finally:
+        try:
+            if img_path.startswith("/tmp/"):
+                os.remove(img_path)
+        except OSError:
+            pass
+
+
 def recognize_faces(image_path: str) -> list[str]:
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -194,8 +224,33 @@ def recognize_faces(image_path: str) -> list[str]:
     return recognized
 
 
-def recognize_webcam() -> None:
-    """Captura a webcam e exibe rostos identificados em tempo real."""
+def recognize_faces_social(
+    image_path: str,
+    sites: Iterable[str] | None = None,
+    repo_path: str | None = None,
+) -> list[str]:
+    """Recognize faces and start social search in the background."""
+    names = recognize_faces(image_path)
+    if names:
+        _sites = list(sites) if sites else ["facebook"]
+        for name in names:
+            thr = threading.Thread(
+                target=_social_search_background,
+                args=(image_path, name, _sites, repo_path),
+                daemon=True,
+            )
+            thr.start()
+    return names
+
+
+def recognize_webcam(
+    *, social_search: bool = False, sites: Iterable[str] | None = None, repo_path: str | None = None
+) -> None:
+    """Captura a webcam e exibe rostos identificados em tempo real.
+
+    When ``social_search`` is True, any recognized face triggers a search on the
+    specified social networks in the background.
+    """
     if face_recognition is None:
         logger.error("face_recognition not installed")
         return
@@ -209,6 +264,9 @@ def recognize_webcam() -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
+    seen: set[str] = set()
+    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -257,6 +315,16 @@ def recognize_webcam() -> None:
                 (0, 255, 0),
                 2,
             )
+            if social_search and name != "Unknown" and name not in seen:
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                cv2.imwrite(tmp.name, crop)
+                thr = threading.Thread(
+                    target=_social_search_background,
+                    args=(tmp.name, name, _sites, repo_path),
+                    daemon=True,
+                )
+                thr.start()
+                seen.add(name)
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -264,8 +332,14 @@ def recognize_webcam() -> None:
     cv2.destroyAllWindows()
 
 
-def recognize_webcam_mediapipe() -> None:
-    """Captura a webcam usando MediaPipe para detecção e identifica rostos."""
+def recognize_webcam_mediapipe(
+    *, social_search: bool = False, sites: Iterable[str] | None = None, repo_path: str | None = None
+) -> None:
+    """Captura a webcam usando MediaPipe para detecção e identifica rostos.
+
+    When ``social_search`` is True, a search in the configured social networks
+    is started whenever a known face is detected.
+    """
     if face_recognition is None:
         logger.error("face_recognition not installed")
         return
@@ -286,6 +360,9 @@ def recognize_webcam_mediapipe() -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
+    seen: set[str] = set()
+    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -342,6 +419,16 @@ def recognize_webcam_mediapipe() -> None:
                 (0, 255, 0),
                 2,
             )
+            if social_search and name != "Unknown" and name not in seen:
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                cv2.imwrite(tmp.name, crop)
+                thr = threading.Thread(
+                    target=_social_search_background,
+                    args=(tmp.name, name, _sites, repo_path),
+                    daemon=True,
+                )
+                thr.start()
+                seen.add(name)
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -465,9 +552,14 @@ if __name__ == "__main__":  # pragma: no cover - CLI helper
     parser = argparse.ArgumentParser(description="Reconhecimento facial")
     parser.add_argument("--webcam", action="store_true", help="Usa webcam")
     parser.add_argument("--image", help="Imagem para reconhecer", nargs="?")
+    parser.add_argument("--social-search", action="store_true", help="Buscar em redes sociais")
+    parser.add_argument("--site", action="append", default=["facebook"], help="Rede social para buscar")
     args = parser.parse_args()
 
     if args.webcam:
-        recognize_webcam()
+        recognize_webcam(social_search=args.social_search, sites=args.site)
     elif args.image:
-        print(recognize_faces(args.image))
+        if args.social_search:
+            print(recognize_faces_social(args.image, sites=args.site))
+        else:
+            print(recognize_faces(args.image))
