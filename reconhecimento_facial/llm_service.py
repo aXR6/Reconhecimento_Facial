@@ -52,7 +52,20 @@ def generate_caption(image_path: str) -> str:
     if _pipe is None:
         raise RuntimeError("Falha ao carregar modelo de legenda")
     try:
-        out: List[dict] = _pipe(image_path)
+        if all(hasattr(_pipe, attr) for attr in ("preprocess", "_forward", "postprocess")):
+            model_inputs = _pipe.preprocess(image_path)
+            if (
+                "input_ids" in model_inputs
+                and model_inputs["input_ids"] is not None
+                and "attention_mask" not in model_inputs
+            ):
+                import torch  # Local import to avoid hard dependency during tests
+
+                model_inputs["attention_mask"] = torch.ones_like(model_inputs["input_ids"])
+            output_ids = _pipe._forward(model_inputs)
+            out: List[dict] = _pipe.postprocess(output_ids)
+        else:
+            out: List[dict] = _pipe(image_path)
     except Exception as exc:  # noqa: BLE001
         logger.error("Erro ao gerar legenda: %s", exc)
         return ""
