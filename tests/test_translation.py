@@ -16,8 +16,7 @@ def test_translate_file(monkeypatch):
 def test_translate_file_other_lang(monkeypatch):
     dummy_model = types.SimpleNamespace(transcribe=lambda *a, **k: {"text": "hola"})
     monkeypatch.setattr(wt, "whisper", types.SimpleNamespace(load_model=lambda n: dummy_model))
-    monkeypatch.setattr(wt, "_translate_text", lambda t, s, d: "bonjour")
-    assert wt.translate_file("foo.wav", source_lang="es", target_lang="fr") == "bonjour"
+    assert wt.translate_file("foo.wav", source_lang="es", target_lang="fr") == ""
 
 
 def test_transcribe_file(monkeypatch):

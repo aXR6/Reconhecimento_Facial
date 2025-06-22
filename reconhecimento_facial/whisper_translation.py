@@ -19,11 +19,6 @@ except (ModuleNotFoundError, OSError):  # pragma: no cover - optional dependency
     sd = None
 
 try:
-    from transformers import pipeline
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    pipeline = None
-
-try:
     import whisper
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     whisper = None
@@ -61,18 +56,10 @@ def _process_file(
 
 
 def _translate_text(text: str, source_lang: str, target_lang: str) -> str:
-    """Translate ``text`` using HuggingFace models."""
-    if pipeline is None:
-        logger.error("Depend\u00eancias n\u00e3o instaladas: transformers")
-        return ""
-    model_name = f"Helsinki-NLP/opus-mt-{source_lang}-{target_lang}"
-    try:
-        trans = pipeline("translation", model=model_name)
-        res = trans(text)
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Erro na tradu\u00e7\u00e3o: %s", exc)
-        return ""
-    return res[0]["translation_text"] if res else ""
+    """Translate ``text`` using Whisper only (English output)."""
+    del text, source_lang, target_lang  # unused
+    logger.error("Somente tradu\u00e7\u00e3o para o ingl\u00eas \u00e9 suportada com Whisper")
+    return ""
 
 
 def translate_file(
@@ -81,13 +68,11 @@ def translate_file(
     source_lang: Optional[str] = None,
     target_lang: str = "en",
 ) -> str:
-    """Translate an audio file using Whisper and HuggingFace models."""
-    if target_lang == "en":
-        return _process_file(file_path, model_name, "translate", source_lang)
-    text = _process_file(file_path, model_name, "transcribe", source_lang)
-    if not text:
+    """Translate an audio file using Whisper (only to English)."""
+    if target_lang != "en":
+        logger.error("Somente tradu\u00e7\u00f5es para o ingl\u00eas s\u00e3o suportadas")
         return ""
-    return _translate_text(text, source_lang or "en", target_lang)
+    return _process_file(file_path, model_name, "translate", source_lang)
 
 
 def transcribe_file(
@@ -175,8 +160,10 @@ def translate_microphone(
                         text = result.get("text", "").strip()
                         if text:
                             if translate and target_lang != "en":
-                                text = _translate_text(text, source_lang, target_lang)
-                            if text:
+                                logger.error(
+                                    "Somente tradu\u00e7\u00f5es para o ingl\u00eas s\u00e3o suportadas"
+                                )
+                            else:
                                 print(text)
                     except Exception as exc:  # noqa: BLE001
                         logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
@@ -228,7 +215,11 @@ def main(argv: Optional[list[str]] = None) -> None:
     parser.add_argument("--file", help="Arquivo de áudio a ser traduzido")
     parser.add_argument("--expected", help="Tradução esperada para o áudio")
     parser.add_argument("--src", default="pt", help="Idioma de entrada")
-    parser.add_argument("--dst", default="en", help="Idioma de saída")
+    parser.add_argument(
+        "--dst",
+        default="en",
+        help="Idioma de saída (apenas inglês é suportado)",
+    )
     parser.add_argument(
         "--transcribe",
         action="store_true",
