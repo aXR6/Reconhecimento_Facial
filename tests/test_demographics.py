@@ -12,6 +12,7 @@ def test_detect_demographics_facexformer(monkeypatch):
     dummy.detect_demographics = lambda img: {
         'gender': 'male', 'age': '30', 'ethnicity': 'asian', 'skin': 'light'
     }
+    dummy.extract_embedding = lambda img: b""
     monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
     result = dd.detect_demographics('any.jpg')
     assert result == {
@@ -31,6 +32,7 @@ def test_detect_demographics_array(monkeypatch):
         return {'gender': 'female'}
 
     dummy.detect_demographics = _detect
+    dummy.extract_embedding = lambda img: b""
     monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
     result = dd.detect_demographics(arr)
     assert result == {'gender': 'female'}
@@ -53,6 +55,7 @@ def test_analyze_face(monkeypatch):
 
     dummy.analyze_face = _analyze
     dummy.detect_demographics = lambda img: {}
+    dummy.extract_embedding = lambda img: b""
     monkeypatch.setitem(sys.modules, 'reconhecimento_facial.facexformer.inference', dummy)
     sys.modules.pop('reconhecimento_facial.facexformer', None)
     from reconhecimento_facial.facexformer import analyze_face

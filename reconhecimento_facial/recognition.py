@@ -65,7 +65,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 from reconhecimento_facial.db import get_conn, init_db
 from reconhecimento_facial.demographics_detection import detect_demographics
-from reconhecimento_facial.facexformer import analyze_face
+from reconhecimento_facial.facexformer import analyze_face, extract_embedding
 
 
 def _crop_and_save_face(image_path: str) -> None:
@@ -210,6 +210,41 @@ def register_person_webcam(name: str) -> bool:
         return False
     try:
         ok = register_person(name, tmp)
+        if ok:
+            print("Cadastro salvo com sucesso")
+        return ok
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def register_person_facexformer(name: str, image_path: str) -> bool:
+    """Register a person using FaceXFormer embeddings."""
+    try:
+        emb = extract_embedding(image_path)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("failed to extract embedding: %s", exc)
+        return False
+    init_db()
+    with get_conn() as conn:
+        if conn is None:
+            return False
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO people (name, embedding) VALUES (%s, %s)",
+            (name, emb.tobytes()),
+        )
+        conn.commit()
+    return True
+
+
+def register_person_webcam_facexformer(name: str) -> bool:
+    """Capture from webcam and register the person using FaceXFormer."""
+    tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
+    if not capture_from_webcam(tmp):
+        return False
+    try:
+        ok = register_person_facexformer(name, tmp)
         if ok:
             print("Cadastro salvo com sucesso")
         return ok
