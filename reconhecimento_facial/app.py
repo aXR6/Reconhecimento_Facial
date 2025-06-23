@@ -170,25 +170,38 @@ def _device_menu() -> None:
 
 
 def _other_menu() -> None:
-    options = [
+    global _translation_enabled
+    base_options = [
         "Gerar legenda via LLM",
         "Selecionar dispositivo",
+        "",
         "Voltar",
     ]
     while True:
-        choice = questionary.select("Outros", choices=options).ask()
+        opts = base_options.copy()
+        opts[2] = (
+            "Desativar tradução em tempo real"
+            if _translation_enabled
+            else "Ativar tradução em tempo real"
+        )
+        choice = questionary.select("Outros", choices=opts).ask()
         if choice in (None, "Voltar"):
             break
 
-        if choice == options[0]:
+        if choice == opts[0]:
             image = input("Caminho da imagem: ").strip()
             try:
                 caption = generate_caption(image)
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")
-        elif choice == options[1]:
+        elif choice == opts[1]:
             _device_menu()
+        elif choice == opts[2]:
+            _translation_enabled = not _translation_enabled
+            status = "ativada" if _translation_enabled else "desativada"
+            print(f"Tradução {status}")
+            time.sleep(1)
 
 
 def menu() -> None:
