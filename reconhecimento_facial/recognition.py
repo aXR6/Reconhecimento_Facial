@@ -110,6 +110,19 @@ def _save_cropped_face(crop: np.ndarray, name: str, tech: str) -> Path:
 logger = logging.getLogger(__name__)
 
 
+def _filter_by_length(
+    names: list[str], encodings: list[np.ndarray], length: int
+) -> tuple[list[str], list[np.ndarray]]:
+    """Return only the names and encodings matching the given length."""
+    filt_names: list[str] = []
+    filt_encs: list[np.ndarray] = []
+    for n, e in zip(names, encodings):
+        if len(e) == length:
+            filt_names.append(n)
+            filt_encs.append(e)
+    return filt_names, filt_encs
+
+
 def capture_from_webcam(tmp_path: str) -> bool:
     """Open webcam preview and capture a frame on key press."""
     cap = cv2.VideoCapture(0)
@@ -275,10 +288,13 @@ def recognize_faces(image_path: str) -> list[str]:
     for face_enc in encodings:
         if not known_encodings:
             continue
-        dists = face_recognition.face_distance(known_encodings, face_enc)
+        names, encs = _filter_by_length(known_names, known_encodings, len(face_enc))
+        if not encs:
+            continue
+        dists = face_recognition.face_distance(encs, face_enc)
         best = dists.argmin()
         if dists[best] < 0.6:
-            recognized.append(known_names[best])
+            recognized.append(names[best])
     return recognized
 
 
@@ -312,10 +328,14 @@ def recognize_webcam() -> None:
         for (top, right, bottom, left), face_enc in zip(locations, encodings):
             name = "Unknown"
             if known_encodings:
-                dists = face_recognition.face_distance(known_encodings, face_enc)
-                best = dists.argmin()
-                if dists[best] < 0.6:
-                    name = known_names[best]
+                names, encs = _filter_by_length(
+                    known_names, known_encodings, len(face_enc)
+                )
+                if encs:
+                    dists = face_recognition.face_distance(encs, face_enc)
+                    best = dists.argmin()
+                    if dists[best] < 0.6:
+                        name = names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
             info = ""
@@ -399,10 +419,14 @@ def recognize_webcam_mediapipe() -> None:
         for (top, right, bottom, left), face_enc in zip(locations, encodings):
             name = "Unknown"
             if known_encodings:
-                dists = face_recognition.face_distance(known_encodings, face_enc)
-                best = dists.argmin()
-                if dists[best] < 0.6:
-                    name = known_names[best]
+                names, encs = _filter_by_length(
+                    known_names, known_encodings, len(face_enc)
+                )
+                if encs:
+                    dists = face_recognition.face_distance(encs, face_enc)
+                    best = dists.argmin()
+                    if dists[best] < 0.6:
+                        name = names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
             info = ""
@@ -477,10 +501,14 @@ def demographics_webcam() -> None:
         ):
             name = "Unknown"
             if known_encodings:
-                dists = face_recognition.face_distance(known_encodings, face_enc)
-                best = dists.argmin()
-                if dists[best] < 0.6:
-                    name = known_names[best]
+                names, encs = _filter_by_length(
+                    known_names, known_encodings, len(face_enc)
+                )
+                if encs:
+                    dists = face_recognition.face_distance(encs, face_enc)
+                    best = dists.argmin()
+                    if dists[best] < 0.6:
+                        name = names[best]
 
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
