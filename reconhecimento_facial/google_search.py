@@ -9,6 +9,18 @@ import time
 logger = logging.getLogger(__name__)
 
 
+def _open_in_chrome(url: str) -> bool:
+    """Open ``url`` in Google Chrome if available."""
+    try:
+        browser = webbrowser.get("chrome")
+    except webbrowser.Error:
+        try:
+            browser = webbrowser.get("google-chrome")
+        except webbrowser.Error:
+            browser = webbrowser
+    return browser.open(url)
+
+
 def run_google_search(images: Sequence[str], *, show_status: bool = False) -> list[str]:
     """Search each image on Google Images and open the results page.
 
@@ -60,7 +72,7 @@ def run_google_search(images: Sequence[str], *, show_status: bool = False) -> li
                 urls.append(url)
                 opened = False
                 try:
-                    opened = webbrowser.open(url)
+                    opened = _open_in_chrome(url)
                 except Exception as exc:  # pragma: no cover - browser may not exist
                     logger.error("failed to open webbrowser: %s", exc)
                 if not opened:

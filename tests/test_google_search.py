@@ -21,7 +21,7 @@ def test_run_google_search(monkeypatch, tmp_path):
         return Resp()
 
     monkeypatch.setattr(gs.requests, "post", dummy_post)
-    monkeypatch.setattr(gs.webbrowser, "open", lambda url: called.update({"open": url}))
+    monkeypatch.setattr(gs, "_open_in_chrome", lambda url: called.update({"open": url}))
 
     img = tmp_path / "img.jpg"
     img.write_text("x")
@@ -46,7 +46,7 @@ def test_run_google_search_status(monkeypatch, tmp_path):
         return Resp()
 
     monkeypatch.setattr(gs.requests, "post", dummy_post)
-    monkeypatch.setattr(gs.webbrowser, "open", lambda url: called.update({"open": url}))
+    monkeypatch.setattr(gs, "_open_in_chrome", lambda url: called.update({"open": url}))
 
     dummy_var = types.SimpleNamespace(set=lambda v: called.update({"status": v}))
     dummy_root = types.SimpleNamespace(
