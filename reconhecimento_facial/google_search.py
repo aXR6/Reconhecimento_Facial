@@ -9,10 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 def run_google_search(images: Sequence[str]) -> list[str]:
-    """Search each image on Google Images and open the results page."""
+    """Search each image on Google Images and open the results page.
+
+    A small text interface is printed to the terminal so the user knows the
+    face is being used as the search target on Google and Google Images.
+    """
     urls = []
     for img in images:
         try:
+            msg = (
+                f"\n{'=' * 60}\n"
+                f"O rosto em '{img}' esta sendo buscado no Google e no Google Imagens"
+                f"\n{'=' * 60}"
+            )
+            print(msg)
             with open(img, "rb") as fh:
                 files = {"encoded_image": fh}
                 resp = requests.post(
