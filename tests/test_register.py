@@ -37,16 +37,5 @@ def test_register_person_webcam_social(monkeypatch):
     monkeypatch.setattr(rec, "capture_from_webcam", lambda p: True)
     monkeypatch.setattr(rec, "register_person", lambda n, p: True)
 
-    def dummy_thread(target, args=(), kwargs=None, daemon=None):
-        called["args"] = args
-        target(*args)
-        return types.SimpleNamespace(start=lambda: None)
-
-    monkeypatch.setattr(rec.threading, "Thread", dummy_thread)
-    monkeypatch.setattr(
-        rec, "_google_search_background", lambda *a: called.update({"bg": a})
-    )
-
-    ok = rec.register_person_webcam("Alice", google_search=True)
+    ok = rec.register_person_webcam("Alice")
     assert ok
-    assert called["bg"][0] == os.path.join("photos", "Alice.jpg")

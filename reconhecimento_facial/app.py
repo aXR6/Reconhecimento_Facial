@@ -139,11 +139,11 @@ def _recognition_menu() -> None:
         if _translation_enabled:
             _language_menu()
         if choice == options[0]:
-            _run_recognition(lambda: recognize_webcam(google_search=True))
+            _run_recognition(recognize_webcam)
         elif choice == options[1]:
-            _run_recognition(lambda: recognize_webcam_mediapipe(google_search=True))
+            _run_recognition(recognize_webcam_mediapipe)
         elif choice == options[2]:
-            _run_recognition(lambda: demographics_webcam(google_search=True))
+            _run_recognition(demographics_webcam)
 
 
 def _device_menu() -> None:
@@ -221,9 +221,8 @@ def menu() -> None:
             _recognition_menu()
         elif choice == main_opts[2]:
             name = input("Nome da pessoa: ").strip()
-            social = questionary.confirm("Buscar rosto no Google?").ask()
             try:
-                if register_person_webcam(name, google_search=bool(social)):
+                if register_person_webcam(name):
                     time.sleep(2)
                 else:
                     print("Erro ao cadastrar pessoa")

@@ -101,35 +101,3 @@ def test_detect_hf_increment_yolov8(monkeypatch, tmp_path):
     assert count == 1
 
 
-def test_detect_google_search(monkeypatch, tmp_path):
-    import types
-
-    img = np.zeros((100, 100, 3), dtype=np.uint8)
-    img_path = tmp_path / "img.jpg"
-    cv2.imwrite(str(img_path), img)
-
-    class DummyCascade:
-        def detectMultiScale(self, *a, **k):
-            return np.array([[0, 0, 10, 10]])
-
-    monkeypatch.setattr(fd_mod.cv2, "CascadeClassifier", lambda *_: DummyCascade())
-
-    called = {}
-
-    def dummy_thr(target, args=(), kwargs=None, daemon=None):
-        called["args"] = args
-        target(*args)
-        return types.SimpleNamespace(start=lambda: None)
-
-    monkeypatch.setattr(fd_mod.threading, "Thread", dummy_thr)
-    monkeypatch.setattr(
-        fd_mod, "_google_search_background", lambda *a: called.update({"bg": a})
-    )
-
-    fd_mod.detect_faces(
-        str(img_path),
-        str(tmp_path / "out.jpg"),
-        google_search=True,
-    )
-
-    assert "bg" in called

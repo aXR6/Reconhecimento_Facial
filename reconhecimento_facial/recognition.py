@@ -66,7 +66,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 from reconhecimento_facial.db import get_conn, init_db
 from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face
-from reconhecimento_facial.google_search import run_google_search
 
 
 def _crop_and_save_face(image_path: str) -> None:
@@ -199,18 +198,12 @@ def register_person(name: str, image_path: str) -> bool:
     return True
 
 
-def register_person_webcam(
-    name: str,
-    *,
-    google_search: bool = False,
-) -> bool:
+def register_person_webcam(name: str) -> bool:
     """Capture an image from the webcam and register the person.
 
-    When ``google_search`` is ``True``, the captured face is also searched on
-    Google in the background. The function returns ``True``
-    only when both the capture and the database insertion succeed. This
-    behaviour ensures that callers do not display a successful message when the
-    registration actually failed.
+    The function returns ``True`` only when both the capture and the database
+    insertion succeed. This behaviour ensures that callers do not display a
+    successful message when the registration actually failed.
     """
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
     if not capture_from_webcam(tmp):
@@ -218,14 +211,6 @@ def register_person_webcam(
     try:
         ok = register_person(name, tmp)
         if ok:
-            if google_search:
-                photo = str(Path(PHOTOS_DIR) / Path(tmp).name)
-                thr = threading.Thread(
-                    target=_google_search_background,
-                    args=(photo,),
-                    daemon=True,
-                )
-                thr.start()
             print("Cadastro salvo com sucesso")
         return ok
     finally:
@@ -233,18 +218,6 @@ def register_person_webcam(
             os.remove(tmp)
 
 
-def _google_search_background(img_path: str) -> None:
-    """Run Google search for ``img_path`` and clean up."""
-    try:
-        run_google_search([img_path])
-    except Exception as exc:  # pragma: no cover - best effort
-        logger.error("google search error: %s", exc)
-    finally:
-        try:
-            if img_path.startswith("/tmp/"):
-                os.remove(img_path)
-        except OSError:
-            pass
 
 
 def recognize_faces(image_path: str) -> list[str]:
@@ -274,25 +247,10 @@ def recognize_faces(image_path: str) -> list[str]:
     return recognized
 
 
-def recognize_faces_google(image_path: str) -> list[str]:
-    """Recognize faces and search the image on Google in the background."""
-    names = recognize_faces(image_path)
-    if names:
-        thr = threading.Thread(
-            target=_google_search_background,
-            args=(image_path,),
-            daemon=True,
-        )
-        thr.start()
-    return names
 
 
-def recognize_webcam(*, google_search: bool = False) -> None:
-    """Capture webcam and display faces in real time.
-
-    When ``google_search`` is True, recognized faces are searched on Google in
-    the background.
-    """
+def recognize_webcam() -> None:
+    """Capture webcam and display faces in real time."""
     if face_recognition is None:
         logger.error("face_recognition not installed")
         return
@@ -306,8 +264,6 @@ def recognize_webcam(*, google_search: bool = False) -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
-
-    seen: set[str] = set()
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -357,15 +313,7 @@ def recognize_webcam(*, google_search: bool = False) -> None:
                 2,
             )
 
-            saved = _save_cropped_face(crop, name, "face_recognition")
-            if google_search and name != "Unknown" and name not in seen:
-                thr = threading.Thread(
-                    target=_google_search_background,
-                    args=(str(saved),),
-                    daemon=True,
-                )
-                thr.start()
-                seen.add(name)
+            _save_cropped_face(crop, name, "face_recognition")
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -373,12 +321,8 @@ def recognize_webcam(*, google_search: bool = False) -> None:
     cv2.destroyAllWindows()
 
 
-def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
-    """Capture webcam using MediaPipe for detection and identify faces.
-
-    When ``google_search`` is True, the cropped face is searched on Google in
-    the background.
-    """
+def recognize_webcam_mediapipe() -> None:
+    """Capture webcam using MediaPipe for detection and identify faces."""
     if face_recognition is None:
         logger.error("face_recognition not installed")
         return
@@ -399,8 +343,6 @@ def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
-
-    seen: set[str] = set()
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -457,15 +399,7 @@ def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
                 (0, 255, 0),
                 2,
             )
-            saved = _save_cropped_face(crop, name, "mediapipe")
-            if google_search and name != "Unknown" and name not in seen:
-                thr = threading.Thread(
-                    target=_google_search_background,
-                    args=(str(saved),),
-                    daemon=True,
-                )
-                thr.start()
-                seen.add(name)
+            _save_cropped_face(crop, name, "mediapipe")
         cv2.imshow("webcam", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -473,7 +407,7 @@ def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
     cv2.destroyAllWindows()
 
 
-def demographics_webcam(*, google_search: bool = False) -> None:
+def demographics_webcam() -> None:
     """Recognize people and display FaceXFormer predictions using the webcam feed."""
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -488,8 +422,6 @@ def demographics_webcam(*, google_search: bool = False) -> None:
 
     known_names = [row[0] for row in data]
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
-
-    seen: set[str] = set()
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -518,15 +450,7 @@ def demographics_webcam(*, google_search: bool = False) -> None:
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
 
-            saved = _save_cropped_face(crop, name, "facexformer")
-            if google_search and name != "Unknown" and name not in seen:
-                thr = threading.Thread(
-                    target=_google_search_background,
-                    args=(str(saved),),
-                    daemon=True,
-                )
-                thr.start()
-                seen.add(name)
+            _save_cropped_face(crop, name, "facexformer")
 
             dem: dict[str, Any] = {}
             try:
@@ -629,13 +553,9 @@ if __name__ == "__main__":  # pragma: no cover - CLI helper
     parser = argparse.ArgumentParser(description="Reconhecimento facial")
     parser.add_argument("--webcam", action="store_true", help="Usa webcam")
     parser.add_argument("--image", help="Imagem para reconhecer", nargs="?")
-    parser.add_argument("--google-search", action="store_true", help="Buscar no Google")
     args = parser.parse_args()
 
     if args.webcam:
-        recognize_webcam(google_search=args.google_search)
+        recognize_webcam()
     elif args.image:
-        if args.google_search:
-            print(recognize_faces_google(args.image))
-        else:
-            print(recognize_faces(args.image))
+        print(recognize_faces(args.image))
