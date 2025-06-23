@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Iterable, Any
 from importlib.util import find_spec
+from datetime import datetime
 
 import cv2
 import os
@@ -94,6 +95,17 @@ def _crop_and_save_face(image_path: str) -> None:
         out_path = Path(PHOTOS_DIR) / Path(image_path).name
         cv2.imwrite(str(out_path), crop)
         cv2.imwrite(image_path, crop)
+
+
+def _save_cropped_face(crop: np.ndarray, name: str, tech: str) -> Path:
+    """Save cropped face image using standardized naming."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    clean_name = name.replace(" ", "_") or "Unknown"
+    filename = f"{clean_name}_{timestamp}_{tech}.jpg"
+    out_path = Path(PHOTOS_DIR) / filename
+    Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(out_path), crop)
+    return out_path
 
 
 logger = logging.getLogger(__name__)
@@ -376,12 +388,10 @@ def recognize_webcam(
                 2,
             )
 
+            _save_cropped_face(crop, name, "face_recognition")
             if social_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
-                out_file = Path(PHOTOS_DIR) / Path(tmp.name).name
-                Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
-                cv2.imwrite(str(out_file), crop)
                 thr = threading.Thread(
                     target=_social_search_background,
                     args=(tmp.name, name, _sites, db_path),
@@ -486,12 +496,10 @@ def recognize_webcam_mediapipe(
                 (0, 255, 0),
                 2,
             )
+            _save_cropped_face(crop, name, "mediapipe")
             if social_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
-                out_file = Path(PHOTOS_DIR) / Path(tmp.name).name
-                Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
-                cv2.imwrite(str(out_file), crop)
                 thr = threading.Thread(
                     target=_social_search_background,
                     args=(tmp.name, name, _sites, db_path),
@@ -556,6 +564,8 @@ def demographics_webcam(
 
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
+
+            _save_cropped_face(crop, name, "facexformer")
 
             dem: dict[str, Any] = {}
             try:
