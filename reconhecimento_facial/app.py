@@ -212,11 +212,6 @@ def menu() -> None:
             "Reconhecimento",
             "Cadastrar pessoa (face_recognition)",
             "Outros",
-            (
-                "Desativar tradução em tempo real"
-                if _translation_enabled
-                else "Ativar tradução em tempo real"
-            ),
             "Sair",
         ]
         os.system("cls" if os.name == "nt" else "clear")
@@ -242,11 +237,6 @@ def menu() -> None:
                 print(f"Erro ao cadastrar: {exc}")
         elif choice == main_opts[3]:
             _other_menu()
-        elif choice == main_opts[4]:
-            _translation_enabled = not _translation_enabled
-            status = "ativada" if _translation_enabled else "desativada"
-            print(f"Tradução {status}")
-            time.sleep(1)
 
 
 def main() -> None:
