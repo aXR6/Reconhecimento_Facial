@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 _src_lang = "pt"
 _dst_lang = "en"
+_translation_enabled = True
 
 
 def _language_menu() -> None:
@@ -70,6 +71,14 @@ def _run_with_translation(func) -> None:
     finally:
         stop_event.set()
         thr.join()
+
+
+def _run_recognition(func) -> None:
+    """Execute recognition with optional translation."""
+    if _translation_enabled:
+        _run_with_translation(func)
+    else:
+        func()
 
 
 def _detection_menu() -> None:
@@ -131,13 +140,14 @@ def _recognition_menu() -> None:
         choice = questionary.select("Reconhecimento", choices=options).ask()
         if choice in (None, "Voltar"):
             break
-        _language_menu()
+        if _translation_enabled:
+            _language_menu()
         if choice == options[0]:
-            _run_with_translation(lambda: recognize_webcam(social_search=True))
+            _run_recognition(lambda: recognize_webcam(social_search=True))
         elif choice == options[1]:
-            _run_with_translation(lambda: recognize_webcam_mediapipe(social_search=True))
+            _run_recognition(lambda: recognize_webcam_mediapipe(social_search=True))
         elif choice == options[2]:
-            _run_with_translation(lambda: demographics_webcam(social_search=True))
+            _run_recognition(lambda: demographics_webcam(social_search=True))
 
 
 
@@ -182,14 +192,20 @@ def _other_menu() -> None:
 
 
 def menu() -> None:
-    main_opts = [
-        "Detecção",
-        "Reconhecimento",
-        "Cadastrar pessoa (face_recognition)",
-        "Outros",
-        "Sair",
-    ]
+    global _translation_enabled
     while True:
+        main_opts = [
+            "Detecção",
+            "Reconhecimento",
+            "Cadastrar pessoa (face_recognition)",
+            "Outros",
+            (
+                "Desativar tradução em tempo real"
+                if _translation_enabled
+                else "Ativar tradução em tempo real"
+            ),
+            "Sair",
+        ]
         os.system("cls" if os.name == "nt" else "clear")
         choice = questionary.select("Escolha uma categoria", choices=main_opts).ask()
         if choice in (None, "Sair"):
@@ -213,6 +229,11 @@ def menu() -> None:
                 print(f"Erro ao cadastrar: {exc}")
         elif choice == main_opts[3]:
             _other_menu()
+        elif choice == main_opts[4]:
+            _translation_enabled = not _translation_enabled
+            status = "ativada" if _translation_enabled else "desativada"
+            print(f"Tradução {status}")
+            time.sleep(1)
 
 
 def main() -> None:
