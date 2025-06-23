@@ -58,10 +58,13 @@ def run_google_search(images: Sequence[str], *, show_status: bool = False) -> li
             url = resp.headers.get("Location")
             if resp.status_code == 302 and url:
                 urls.append(url)
+                opened = False
                 try:
-                    webbrowser.open(url)
-                except Exception:
-                    pass
+                    opened = webbrowser.open(url)
+                except Exception as exc:  # pragma: no cover - browser may not exist
+                    logger.error("failed to open webbrowser: %s", exc)
+                if not opened:
+                    print(f"\nAbra este link manualmente:\n{url}")
             else:
                 logger.warning("Search failed for %s", img)
         except Exception as exc:  # pragma: no cover - best effort
