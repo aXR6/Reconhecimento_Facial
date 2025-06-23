@@ -31,7 +31,7 @@ def import_rec(monkeypatch):
     return importlib.import_module("reconhecimento_facial.recognition")
 
 
-def test_recognize_faces_social(monkeypatch):
+def test_recognize_faces_google(monkeypatch):
     rec = import_rec(monkeypatch)
     called = {}
     monkeypatch.setattr(rec, "recognize_faces", lambda img: ["Alice"])
@@ -43,9 +43,9 @@ def test_recognize_faces_social(monkeypatch):
 
     monkeypatch.setattr(rec.threading, "Thread", dummy_thread)
     monkeypatch.setattr(
-        rec, "_social_search_background", lambda *a, **k: called.update({"bg": a})
+        rec, "_google_search_background", lambda *a, **k: called.update({"bg": a})
     )
 
-    names = rec.recognize_faces_social("img.jpg", sites=["facebook"])
+    names = rec.recognize_faces_google("img.jpg")
     assert names == ["Alice"]
-    assert called["bg"][1] == "Alice"
+    assert called["bg"][0] == "img.jpg"

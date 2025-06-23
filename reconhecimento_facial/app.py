@@ -55,8 +55,6 @@ def _language_menu() -> None:
         _dst_lang = langs[dst]
 
 
-
-
 def _run_with_translation(func) -> None:
     """Execute a recognition function while running translation."""
     stop_event = threading.Event()
@@ -127,8 +125,6 @@ def _detection_menu() -> None:
                 print(f"Erro: {exc}")
 
 
-
-
 def _recognition_menu() -> None:
     options = [
         "Reconhecimento via webcam (face_recognition)",
@@ -143,19 +139,19 @@ def _recognition_menu() -> None:
         if _translation_enabled:
             _language_menu()
         if choice == options[0]:
-            _run_recognition(lambda: recognize_webcam(social_search=True))
+            _run_recognition(lambda: recognize_webcam(google_search=True))
         elif choice == options[1]:
-            _run_recognition(lambda: recognize_webcam_mediapipe(social_search=True))
+            _run_recognition(lambda: recognize_webcam_mediapipe(google_search=True))
         elif choice == options[2]:
-            _run_recognition(lambda: demographics_webcam(social_search=True))
-
-
+            _run_recognition(lambda: demographics_webcam(google_search=True))
 
 
 def _device_menu() -> None:
     options = ["Auto", "GPU", "CPU", "Voltar"]
     while True:
-        choice = questionary.select("Dispositivo de processamento", choices=options).ask()
+        choice = questionary.select(
+            "Dispositivo de processamento", choices=options
+        ).ask()
         if choice in (None, "Voltar"):
             break
         from reconhecimento_facial.device import set_device
@@ -225,11 +221,9 @@ def menu() -> None:
             _recognition_menu()
         elif choice == main_opts[2]:
             name = input("Nome da pessoa: ").strip()
-            social = questionary.confirm(
-                "Buscar rosto nas redes sociais?"
-            ).ask()
+            social = questionary.confirm("Buscar rosto no Google?").ask()
             try:
-                if register_person_webcam(name, social_search=bool(social)):
+                if register_person_webcam(name, google_search=bool(social)):
                     time.sleep(2)
                 else:
                     print("Erro ao cadastrar pessoa")

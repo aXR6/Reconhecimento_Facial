@@ -44,9 +44,9 @@ def test_register_person_webcam_social(monkeypatch):
 
     monkeypatch.setattr(rec.threading, "Thread", dummy_thread)
     monkeypatch.setattr(
-        rec, "_social_search_background", lambda *a: called.update({"bg": a})
+        rec, "_google_search_background", lambda *a: called.update({"bg": a})
     )
 
-    ok = rec.register_person_webcam("Alice", social_search=True, sites=["fb"])
+    ok = rec.register_person_webcam("Alice", google_search=True)
     assert ok
-    assert called["bg"][1] == "Alice"
+    assert called["bg"][0] == "/tmp/Alice.jpg"

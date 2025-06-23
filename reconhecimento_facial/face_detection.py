@@ -36,7 +36,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     YOLO = None
 
-from .recognition import _social_search_background
+from .recognition import _google_search_background
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +55,7 @@ def detect_faces(
     as_json: bool = False,
     save_db: bool = False,
     recognized: Optional[List[str]] = None,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
+    google_search: bool = False,
 ) -> int | Dict[str, List[int]]:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
@@ -66,9 +64,8 @@ def detect_faces(
 
     Retorna o número total de rostos ou um dicionário com boxes quando
     ``as_json`` for ``True``. Pode desfocar as faces, exibir a imagem e
-    salvar o resultado em um banco PostgreSQL. Quando ``social_search``
-    é ``True``, cada rosto recortado é buscado nas redes sociais
-    configuradas.
+    salvar o resultado em um banco PostgreSQL. Quando ``google_search``
+    é ``True``, cada rosto recortado é pesquisado no Google.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -157,18 +154,14 @@ def detect_faces(
     cv2.imwrite(output_path, img)
 
     result = {"boxes": boxes, "count": total_faces}
-    if social_search and boxes:
-        _sites = list(sites) if sites else ["facebook"]
-        for idx, (x, y, w, h) in enumerate(boxes):
+    if google_search and boxes:
+        for x, y, w, h in boxes:
             crop = img[y : y + h, x : x + w]
             tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
             cv2.imwrite(tmp.name, crop)
-            name = ""
-            if recognized and idx < len(recognized):
-                name = recognized[idx]
             thr = threading.Thread(
-                target=_social_search_background,
-                args=(tmp.name, name, _sites, db_path),
+                target=_google_search_background,
+                args=(tmp.name,),
                 daemon=True,
             )
             thr.start()
@@ -199,14 +192,12 @@ def detect_faces_video(
     blur: bool = False,
     show_info: bool = False,
     *,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
+    google_search: bool = False,
 ) -> None:
     """Processa um vídeo ou webcam detectando rostos.
 
-    Se ``social_search`` for ``True``, cada face encontrada é procurada nas
-    redes sociais configuradas.
+    Se ``google_search`` for ``True``, cada face encontrada é pesquisada no
+    Google.
     """
     cap = cv2.VideoCapture(source)
     writer = None
@@ -230,9 +221,7 @@ def detect_faces_video(
             show=False,
             blur=blur,
             as_json=True,
-            social_search=social_search,
-            sites=sites,
-            db_path=db_path,
+            google_search=google_search,
         )
         processed = cv2.imread(tmp)
         if show_info:
@@ -310,12 +299,8 @@ def main() -> None:
         "--save-db", action="store_true", help="Salva resultado no banco"
     )
     parser.add_argument(
-        "--social-search", action="store_true", help="Busca rostos nas redes sociais"
+        "--google-search", action="store_true", help="Busca rostos no Google"
     )
-    parser.add_argument(
-        "--site", action="append", default=["facebook"], help="Rede social para buscar"
-    )
-    parser.add_argument("--db", help="Diretório com imagens para busca social")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -330,9 +315,7 @@ def main() -> None:
                 show=args.show,
                 blur=args.blur,
                 show_info=args.info,
-                social_search=args.social_search,
-                sites=args.site,
-                db_path=args.db,
+                google_search=args.google_search,
             )
             qtd = None
         else:
@@ -345,9 +328,7 @@ def main() -> None:
                 blur=args.blur,
                 as_json=args.json,
                 save_db=args.save_db,
-                social_search=args.social_search,
-                sites=args.site,
-                db_path=args.db,
+                google_search=args.google_search,
             )
     except FileNotFoundError as exc:
         logger.error(exc)

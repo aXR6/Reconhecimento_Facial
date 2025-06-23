@@ -66,7 +66,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 from reconhecimento_facial.db import get_conn, init_db
 from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face
-from reconhecimento_facial.social_search import run_social_search
+from reconhecimento_facial.google_search import run_google_search
 
 
 def _crop_and_save_face(image_path: str) -> None:
@@ -202,14 +202,12 @@ def register_person(name: str, image_path: str) -> bool:
 def register_person_webcam(
     name: str,
     *,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
+    google_search: bool = False,
 ) -> bool:
     """Capture an image from the webcam and register the person.
 
-    When ``social_search`` is ``True``, the captured face is also searched on the
-    configured social networks in the background. The function returns ``True``
+    When ``google_search`` is ``True``, the captured face is also searched on
+    Google in the background. The function returns ``True``
     only when both the capture and the database insertion succeed. This
     behaviour ensures that callers do not display a successful message when the
     registration actually failed.
@@ -220,11 +218,10 @@ def register_person_webcam(
     try:
         ok = register_person(name, tmp)
         if ok:
-            if social_search:
-                _sites = list(sites) if sites else ["facebook"]
+            if google_search:
                 thr = threading.Thread(
-                    target=_social_search_background,
-                    args=(tmp, name, _sites, db_path),
+                    target=_google_search_background,
+                    args=(tmp,),
                     daemon=True,
                 )
                 thr.start()
@@ -235,29 +232,12 @@ def register_person_webcam(
             os.remove(tmp)
 
 
-def _social_search_background(
-    img_path: str, name: str, sites: Iterable[str], db_path: str | None
-) -> None:
-    """Run social search in a background thread and report progress."""
+def _google_search_background(img_path: str) -> None:
+    """Run Google search for ``img_path`` and clean up."""
     try:
-        for site in sites:
-            print(f"Buscando rosto em {site}...")
-            out_dir = run_social_search(
-                [img_path], name=name, sites=[site], db_path=db_path
-            )
-            print(f"Busca em {site} finalizada")
-            for csv in Path(out_dir).glob("*.csv"):
-                try:
-                    with open(csv) as fh:
-                        lines = fh.readlines()
-                    if len(lines) > 1:
-                        print(f"Perfil encontrado para {name} em {csv}")
-                        break
-                except Exception:  # noqa: BLE001
-                    continue
-        print("Busca social finalizada")
+        run_google_search([img_path])
     except Exception as exc:  # pragma: no cover - best effort
-        logger.error("social search error: %s", exc)
+        logger.error("google search error: %s", exc)
     finally:
         try:
             if img_path.startswith("/tmp/"):
@@ -293,35 +273,24 @@ def recognize_faces(image_path: str) -> list[str]:
     return recognized
 
 
-def recognize_faces_social(
-    image_path: str,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
-) -> list[str]:
-    """Recognize faces and start social search in the background."""
+def recognize_faces_google(image_path: str) -> list[str]:
+    """Recognize faces and search the image on Google in the background."""
     names = recognize_faces(image_path)
     if names:
-        _sites = list(sites) if sites else ["facebook"]
-        for name in names:
-            thr = threading.Thread(
-                target=_social_search_background,
-                args=(image_path, name, _sites, db_path),
-                daemon=True,
-            )
-            thr.start()
+        thr = threading.Thread(
+            target=_google_search_background,
+            args=(image_path,),
+            daemon=True,
+        )
+        thr.start()
     return names
 
 
-def recognize_webcam(
-    *,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
-) -> None:
-    """Captura a webcam e exibe rostos identificados em tempo real.
+def recognize_webcam(*, google_search: bool = False) -> None:
+    """Capture webcam and display faces in real time.
 
-    When ``social_search`` is True, any recognized face triggers a search on the
-    specified social networks in the background.
+    When ``google_search`` is True, recognized faces are searched on Google in
+    the background.
     """
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -338,7 +307,6 @@ def recognize_webcam(
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
 
     seen: set[str] = set()
-    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -389,12 +357,12 @@ def recognize_webcam(
             )
 
             _save_cropped_face(crop, name, "face_recognition")
-            if social_search and name != "Unknown" and name not in seen:
+            if google_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
-                    target=_social_search_background,
-                    args=(tmp.name, name, _sites, db_path),
+                    target=_google_search_background,
+                    args=(tmp.name,),
                     daemon=True,
                 )
                 thr.start()
@@ -406,16 +374,11 @@ def recognize_webcam(
     cv2.destroyAllWindows()
 
 
-def recognize_webcam_mediapipe(
-    *,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
-) -> None:
-    """Captura a webcam usando MediaPipe para detecção e identifica rostos.
+def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
+    """Capture webcam using MediaPipe for detection and identify faces.
 
-    When ``social_search`` is True, a search in the configured social networks
-    is started whenever a known face is detected.
+    When ``google_search`` is True, the cropped face is searched on Google in
+    the background.
     """
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -439,7 +402,6 @@ def recognize_webcam_mediapipe(
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
 
     seen: set[str] = set()
-    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     while True:
@@ -497,12 +459,12 @@ def recognize_webcam_mediapipe(
                 2,
             )
             _save_cropped_face(crop, name, "mediapipe")
-            if social_search and name != "Unknown" and name not in seen:
+            if google_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
-                    target=_social_search_background,
-                    args=(tmp.name, name, _sites, db_path),
+                    target=_google_search_background,
+                    args=(tmp.name,),
                     daemon=True,
                 )
                 thr.start()
@@ -514,12 +476,7 @@ def recognize_webcam_mediapipe(
     cv2.destroyAllWindows()
 
 
-def demographics_webcam(
-    *,
-    social_search: bool = False,
-    sites: Iterable[str] | None = None,
-    db_path: str | None = None,
-) -> None:
+def demographics_webcam(*, google_search: bool = False) -> None:
     """Recognize people and display FaceXFormer predictions using the webcam feed."""
     if face_recognition is None:
         logger.error("face_recognition not installed")
@@ -536,7 +493,6 @@ def demographics_webcam(
     known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
 
     seen: set[str] = set()
-    _sites = list(sites) if sites else ["facebook"]
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -566,6 +522,16 @@ def demographics_webcam(
             crop = frame[top:bottom, left:right]
 
             _save_cropped_face(crop, name, "facexformer")
+            if google_search and name != "Unknown" and name not in seen:
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                cv2.imwrite(tmp.name, crop)
+                thr = threading.Thread(
+                    target=_google_search_background,
+                    args=(tmp.name,),
+                    daemon=True,
+                )
+                thr.start()
+                seen.add(name)
 
             dem: dict[str, Any] = {}
             try:
@@ -668,18 +634,13 @@ if __name__ == "__main__":  # pragma: no cover - CLI helper
     parser = argparse.ArgumentParser(description="Reconhecimento facial")
     parser.add_argument("--webcam", action="store_true", help="Usa webcam")
     parser.add_argument("--image", help="Imagem para reconhecer", nargs="?")
-    parser.add_argument(
-        "--social-search", action="store_true", help="Buscar em redes sociais"
-    )
-    parser.add_argument(
-        "--site", action="append", default=["facebook"], help="Rede social para buscar"
-    )
+    parser.add_argument("--google-search", action="store_true", help="Buscar no Google")
     args = parser.parse_args()
 
     if args.webcam:
-        recognize_webcam(social_search=args.social_search, sites=args.site)
+        recognize_webcam(google_search=args.google_search)
     elif args.image:
-        if args.social_search:
-            print(recognize_faces_social(args.image, sites=args.site))
+        if args.google_search:
+            print(recognize_faces_google(args.image))
         else:
             print(recognize_faces(args.image))
