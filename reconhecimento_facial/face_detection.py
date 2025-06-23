@@ -36,7 +36,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     YOLO = None
 
-from .recognition import _google_search_background
+from .recognition import _google_search_background, _save_cropped_face
 
 logger = logging.getLogger(__name__)
 
@@ -157,11 +157,10 @@ def detect_faces(
     if google_search and boxes:
         for x, y, w, h in boxes:
             crop = img[y : y + h, x : x + w]
-            tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-            cv2.imwrite(tmp.name, crop)
+            saved = _save_cropped_face(crop, "Unknown", "detect")
             thr = threading.Thread(
                 target=_google_search_background,
-                args=(tmp.name,),
+                args=(str(saved),),
                 daemon=True,
             )
             thr.start()
