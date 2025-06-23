@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 def _prepare_modules(monkeypatch):
     dummy_fx = types.ModuleType("facexformer")
     dummy_fx.analyze_face = lambda img: {}
+    dummy_fx.extract_embedding = lambda img: b""
     monkeypatch.setitem(sys.modules, "reconhecimento_facial.facexformer", dummy_fx)
 
     dummy_dem = types.ModuleType("demographics_detection")
