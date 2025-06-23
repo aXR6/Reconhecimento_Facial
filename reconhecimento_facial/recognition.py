@@ -68,8 +68,11 @@ from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face, extract_embedding
 
 
-def _crop_and_save_face(image_path: str) -> None:
-    """Recorta o primeiro rosto encontrado e salva em ``PHOTOS_DIR``."""
+def _crop_and_save_face(image_path: str) -> Path | None:
+    """Recorta o primeiro rosto encontrado e salva em ``PHOTOS_DIR``.
+
+    Returns the path of the cropped face or ``None`` when no face is found.
+    """
     img = cv2.imread(image_path)
     if img is None:
         return
@@ -94,7 +97,8 @@ def _crop_and_save_face(image_path: str) -> None:
         out_path = Path(PHOTOS_DIR) / Path(image_path).name
         cv2.imwrite(str(out_path), crop)
         cv2.imwrite(image_path, crop)
-
+        return out_path
+    return None
 
 def _save_cropped_face(crop: np.ndarray, name: str, tech: str) -> Path:
     """Save cropped face image using standardized naming."""
@@ -123,14 +127,17 @@ def _filter_by_length(
     return filt_names, filt_encs
 
 
-def capture_from_webcam(tmp_path: str) -> bool:
-    """Open webcam preview and capture a frame on key press."""
+def capture_from_webcam(tmp_path: str) -> Path | None:
+    """Open webcam preview and capture a frame on key press.
+
+    Returns the path of the cropped face image or ``None`` if capture fails.
+    """
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         logger.error("Nao foi possivel acessar a webcam")
         return False
 
-    captured = False
+    captured: Path | None = None
     print("Pressione 'c' ou ESPAÇO para capturar, 'q' para cancelar")
     while True:
         ret, frame = cap.read()
@@ -170,8 +177,7 @@ def capture_from_webcam(tmp_path: str) -> bool:
         key = cv2.waitKey(1) & 0xFF
         if key in (ord("c"), ord(" ")):
             cv2.imwrite(tmp_path, frame)
-            _crop_and_save_face(tmp_path)
-            captured = True
+            captured = _crop_and_save_face(tmp_path)
             break
         if key == ord("q"):
             break
@@ -185,27 +191,35 @@ def capture_from_webcam(tmp_path: str) -> bool:
 def register_person(name: str, image_path: str) -> bool:
     """Register a person in the database.
 
-    Returns ``True`` if the operation succeeds. ``False`` is returned when a
-    face cannot be encoded or the database is unavailable. This allows callers
-    to properly report failures instead of always signalling success.
+    The image is cropped to the first detected face and saved in
+    ``PHOTOS_DIR``. The embedding and the cropped image path are stored in the
+    ``people`` table. ``False`` is returned when encoding fails or the database
+    is unavailable.
     """
     if face_recognition is None:
         logger.error("face_recognition not installed")
         return False
-    img = face_recognition.load_image_file(image_path)
-    encodings = face_recognition.face_encodings(img)
-    if not encodings:
+
+    cropped = _crop_and_save_face(image_path)
+    if cropped is None:
         logger.error("No face found in %s", image_path)
         return False
+
+    img = face_recognition.load_image_file(str(cropped))
+    encodings = face_recognition.face_encodings(img)
+    if not encodings:
+        logger.error("No face found in %s", cropped)
+        return False
     encoding = encodings[0]
+
     init_db()
     with get_conn() as conn:
         if conn is None:
             return False
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO people (name, embedding) VALUES (%s, %s)",
-            (name, encoding.tobytes()),
+            "INSERT INTO people (name, embedding, photo) VALUES (%s, %s, %s)",
+            (name, encoding.tobytes(), str(cropped)),
         )
         conn.commit()
     return True
@@ -219,10 +233,11 @@ def register_person_webcam(name: str) -> bool:
     successful message when the registration actually failed.
     """
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
-    if not capture_from_webcam(tmp):
+    captured = capture_from_webcam(tmp)
+    if captured is None:
         return False
     try:
-        ok = register_person(name, tmp)
+        ok = register_person(name, str(captured))
         if ok:
             print("Cadastro salvo com sucesso")
         return ok
@@ -233,8 +248,12 @@ def register_person_webcam(name: str) -> bool:
 
 def register_person_facexformer(name: str, image_path: str) -> bool:
     """Register a person using FaceXFormer embeddings."""
+    cropped = _crop_and_save_face(image_path)
+    if cropped is None:
+        logger.error("No face found in %s", image_path)
+        return False
     try:
-        emb = extract_embedding(image_path)
+        emb = extract_embedding(str(cropped))
     except Exception as exc:  # noqa: BLE001
         logger.error("failed to extract embedding: %s", exc)
         return False
@@ -244,8 +263,8 @@ def register_person_facexformer(name: str, image_path: str) -> bool:
             return False
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO people (name, embedding) VALUES (%s, %s)",
-            (name, emb.tobytes()),
+            "INSERT INTO people (name, embedding, photo) VALUES (%s, %s, %s)",
+            (name, emb.tobytes(), str(cropped)),
         )
         conn.commit()
     return True
@@ -254,16 +273,28 @@ def register_person_facexformer(name: str, image_path: str) -> bool:
 def register_person_webcam_facexformer(name: str) -> bool:
     """Capture from webcam and register the person using FaceXFormer."""
     tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
-    if not capture_from_webcam(tmp):
+    captured = capture_from_webcam(tmp)
+    if captured is None:
         return False
     try:
-        ok = register_person_facexformer(name, tmp)
+        ok = register_person_facexformer(name, str(captured))
         if ok:
             print("Cadastro salvo com sucesso")
         return ok
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)
+
+
+def get_people() -> list[tuple[str, str]]:
+    """Return list of registered people as ``(name, photo_path)`` tuples."""
+    init_db()
+    with get_conn() as conn:
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        cur.execute("SELECT name, photo FROM people")
+        return cur.fetchall()
 
 
 

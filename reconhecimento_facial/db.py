@@ -69,10 +69,12 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS people (
                 id SERIAL PRIMARY KEY,
                 name TEXT,
-                embedding BYTEA
+                embedding BYTEA,
+                photo TEXT
             );
             """
         )
+        cur.execute("ALTER TABLE people ADD COLUMN IF NOT EXISTS photo TEXT")
         conn.commit()
 
 
@@ -86,3 +88,13 @@ def save_detection(image: str, faces: int, caption: str = "", obstruction: str =
             (image, faces, caption, obstruction, recognized, extras.Json(result_json) if extras else None),
         )
         conn.commit()
+
+
+def get_people() -> list[tuple[str, str]]:
+    """Return list of registered people as ``(name, photo)``."""
+    with get_conn() as conn:
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        cur.execute("SELECT name, photo FROM people")
+        return cur.fetchall()
