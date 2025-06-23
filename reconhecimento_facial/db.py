@@ -70,11 +70,11 @@ def init_db() -> None:
                 id SERIAL PRIMARY KEY,
                 name TEXT,
                 embedding BYTEA,
-                photo TEXT
+                photo BYTEA
             );
             """
         )
-        cur.execute("ALTER TABLE people ADD COLUMN IF NOT EXISTS photo TEXT")
+        cur.execute("ALTER TABLE people ADD COLUMN IF NOT EXISTS photo BYTEA")
         conn.commit()
 
 
@@ -90,11 +90,12 @@ def save_detection(image: str, faces: int, caption: str = "", obstruction: str =
         conn.commit()
 
 
-def get_people() -> list[tuple[str, str]]:
-    """Return list of registered people as ``(name, photo)``."""
+def get_people() -> list[tuple[str, bytes]]:
+    """Return list of registered people as ``(name, photo_bytes)``."""
     with get_conn() as conn:
         if conn is None:
             return []
         cur = conn.cursor()
         cur.execute("SELECT name, photo FROM people")
-        return cur.fetchall()
+        rows = cur.fetchall()
+        return [(r[0], bytes(r[1]) if r[1] is not None else b"") for r in rows]
