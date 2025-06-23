@@ -75,6 +75,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
+- O menu principal permite ativar ou desativar essa tradução a qualquer momento.
 - É possível escolher o idioma de entrada e o de saída para tradução.
 - Busca de perfis em imagens locais através do recurso `social-search`.
 - Reconhecimento de rostos com busca automática em redes sociais (o menu já inicia a busca por padrão).
