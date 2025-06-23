@@ -49,6 +49,7 @@ python3 -m reconhecimento_facial.whisper_translation --model openai/whisper-larg
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --src pt --expected "texto esperado"
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --transcribe --src pt
 python3 -m reconhecimento_facial.google_search --image foto.jpg
+# os resultados serão abertos automaticamente no Chrome
 ```
 
 ## Organização dos menus
