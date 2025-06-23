@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 dummy_fx = types.ModuleType("facexformer")
 dummy_fx.analyze_face = lambda img: {}
-dummy_fx.extract_embedding = lambda img: b""
 sys.modules["reconhecimento_facial.facexformer"] = dummy_fx
 dummy_dem = types.ModuleType("demographics_detection")
 dummy_dem.detect_demographics = lambda img: {}
