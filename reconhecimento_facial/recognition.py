@@ -63,7 +63,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     face_recognition = None
 
-from reconhecimento_facial.db import get_conn, init_db
+from reconhecimento_facial.db import get_conn, init_db, psycopg2
 from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face, extract_embedding
 
@@ -217,9 +217,11 @@ def register_person(name: str, image_path: str) -> bool:
         if conn is None:
             return False
         cur = conn.cursor()
+        with open(cropped, "rb") as fh:
+            photo_data = fh.read()
         cur.execute(
             "INSERT INTO people (name, embedding, photo) VALUES (%s, %s, %s)",
-            (name, encoding.tobytes(), str(cropped)),
+            (name, encoding.tobytes(), psycopg2.Binary(photo_data)),
         )
         conn.commit()
     return True
@@ -262,9 +264,11 @@ def register_person_facexformer(name: str, image_path: str) -> bool:
         if conn is None:
             return False
         cur = conn.cursor()
+        with open(cropped, "rb") as fh:
+            photo_data = fh.read()
         cur.execute(
             "INSERT INTO people (name, embedding, photo) VALUES (%s, %s, %s)",
-            (name, emb.tobytes(), str(cropped)),
+            (name, emb.tobytes(), psycopg2.Binary(photo_data)),
         )
         conn.commit()
     return True
@@ -286,15 +290,16 @@ def register_person_webcam_facexformer(name: str) -> bool:
             os.remove(tmp)
 
 
-def get_people() -> list[tuple[str, str]]:
-    """Return list of registered people as ``(name, photo_path)`` tuples."""
+def get_people() -> list[tuple[str, bytes]]:
+    """Return list of registered people as ``(name, photo_bytes)`` tuples."""
     init_db()
     with get_conn() as conn:
         if conn is None:
             return []
         cur = conn.cursor()
         cur.execute("SELECT name, photo FROM people")
-        return cur.fetchall()
+        rows = cur.fetchall()
+        return [(r[0], bytes(r[1]) if r[1] is not None else b"") for r in rows]
 
 
 
