@@ -65,7 +65,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 from reconhecimento_facial.db import get_conn, init_db, psycopg2
 from reconhecimento_facial.demographics_detection import detect_demographics
-from reconhecimento_facial.facexformer import analyze_face, extract_embedding
+from reconhecimento_facial.facexformer import analyze_face
 
 
 def _crop_and_save_face(image_path: str) -> Path | None:
@@ -246,60 +246,6 @@ def register_person_webcam(name: str) -> bool:
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)
-
-
-def register_person_facexformer(name: str, image_path: str) -> bool:
-    """Register a person using FaceXFormer embeddings."""
-    cropped = _crop_and_save_face(image_path)
-    if cropped is None:
-        logger.error("No face found in %s", image_path)
-        return False
-    try:
-        emb = extract_embedding(str(cropped))
-    except Exception as exc:  # noqa: BLE001
-        logger.error("failed to extract embedding: %s", exc)
-        return False
-    init_db()
-    with get_conn() as conn:
-        if conn is None:
-            return False
-        cur = conn.cursor()
-        with open(cropped, "rb") as fh:
-            photo_data = fh.read()
-        cur.execute(
-            "INSERT INTO people (name, embedding, photo) VALUES (%s, %s, %s)",
-            (name, emb.tobytes(), psycopg2.Binary(photo_data)),
-        )
-        conn.commit()
-    return True
-
-
-def register_person_webcam_facexformer(name: str) -> bool:
-    """Capture from webcam and register the person using FaceXFormer."""
-    tmp = f"/tmp/{name.replace(' ', '_')}.jpg"
-    captured = capture_from_webcam(tmp)
-    if captured is None:
-        return False
-    try:
-        ok = register_person_facexformer(name, str(captured))
-        if ok:
-            print("Cadastro salvo com sucesso")
-        return ok
-    finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-
-
-def get_people() -> list[tuple[str, bytes]]:
-    """Return list of registered people as ``(name, photo_bytes)`` tuples."""
-    init_db()
-    with get_conn() as conn:
-        if conn is None:
-            return []
-        cur = conn.cursor()
-        cur.execute("SELECT name, photo FROM people")
-        rows = cur.fetchall()
-        return [(r[0], bytes(r[1]) if r[1] is not None else b"") for r in rows]
 
 
 

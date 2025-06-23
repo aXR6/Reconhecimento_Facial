@@ -21,7 +21,7 @@ from reconhecimento_facial.llm_service import generate_caption
 from reconhecimento_facial.obstruction_detection import detect_obstruction
 from reconhecimento_facial.recognition import (
     recognize_webcam,
-    register_person_webcam_facexformer,
+    register_person_webcam,
     demographics_webcam,
     recognize_webcam_mediapipe,
 )
@@ -206,7 +206,7 @@ def menu() -> None:
         main_opts = [
             "Detecção",
             "Reconhecimento",
-            "Cadastrar pessoa (FaceXFormer)",
+            "Cadastrar pessoa (face_recognition)",
             "Outros",
             "Sair",
         ]
@@ -222,7 +222,7 @@ def menu() -> None:
         elif choice == main_opts[2]:
             name = input("Nome da pessoa: ").strip()
             try:
-                if register_person_webcam_facexformer(name):
+                if register_person_webcam(name):
                     time.sleep(2)
                 else:
                     print("Erro ao cadastrar pessoa")

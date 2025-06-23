@@ -321,15 +321,3 @@ def analyze_face(image: Any) -> dict:
     result["visibility"] = int(vis.argmax(dim=1).item())
 
     return result
-
-
-def extract_embedding(image: Any) -> np.ndarray:
-    """Return a face embedding vector using the FaceXFormer backbone."""
-    _load_model()
-    if _model is None:
-        raise RuntimeError("FaceXFormer model not available")
-    tensor = _prepare_face(image)
-    with torch.no_grad():
-        _model.multi_scale_features.clear()
-        emb = _model.backbone(tensor).squeeze()
-    return emb.cpu().numpy()
