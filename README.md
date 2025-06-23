@@ -27,6 +27,9 @@ Instale as dependências e crie as tabelas necessárias (caso use PostgreSQL):
 pip install .
 python -c "from reconhecimento_facial import db; db.init_db()"
 ```
+O script `init_db()` cria as tabelas `detections` e `people` de acordo com
+`Estrutura_SQL/schema.sql`. A tabela `people` inclui a coluna `photo` para
+armazenar a foto utilizada no cadastro de cada pessoa.
 
 Para utilizar o menu interativo:
 
