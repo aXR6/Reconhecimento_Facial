@@ -3,3 +3,4 @@ result.jpg
 __pycache__/
 .venv/
 .env/
+*.jpg
