@@ -72,6 +72,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
+- `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - É possível escolher o idioma de entrada e o de saída para tradução.
@@ -93,6 +94,7 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
 - `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
+- `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 
 ## Requisitos
 
