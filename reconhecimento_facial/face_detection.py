@@ -36,7 +36,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     YOLO = None
 
-from .recognition import _google_search_background, _save_cropped_face
+from .recognition import _save_cropped_face
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,6 @@ def detect_faces(
     as_json: bool = False,
     save_db: bool = False,
     recognized: Optional[List[str]] = None,
-    google_search: bool = False,
 ) -> int | Dict[str, List[int]]:
     """Detecta rostos em ``image_path`` e salva resultado em ``output_path``.
 
@@ -64,8 +63,7 @@ def detect_faces(
 
     Retorna o número total de rostos ou um dicionário com boxes quando
     ``as_json`` for ``True``. Pode desfocar as faces, exibir a imagem e
-    salvar o resultado em um banco PostgreSQL. Quando ``google_search``
-    é ``True``, cada rosto recortado é pesquisado no Google.
+    salvar o resultado em um banco PostgreSQL.
     """
     img = cv2.imread(image_path)
     if img is None:
@@ -154,16 +152,6 @@ def detect_faces(
     cv2.imwrite(output_path, img)
 
     result = {"boxes": boxes, "count": total_faces}
-    if google_search and boxes:
-        for x, y, w, h in boxes:
-            crop = img[y : y + h, x : x + w]
-            saved = _save_cropped_face(crop, "Unknown", "detect")
-            thr = threading.Thread(
-                target=_google_search_background,
-                args=(str(saved),),
-                daemon=True,
-            )
-            thr.start()
     if save_db:
         try:
             from reconhecimento_facial.db import save_detection
@@ -190,14 +178,8 @@ def detect_faces_video(
     show: bool = False,
     blur: bool = False,
     show_info: bool = False,
-    *,
-    google_search: bool = False,
 ) -> None:
-    """Processa um vídeo ou webcam detectando rostos.
-
-    Se ``google_search`` for ``True``, cada face encontrada é pesquisada no
-    Google.
-    """
+    """Processa um vídeo ou webcam detectando rostos."""
     cap = cv2.VideoCapture(source)
     writer = None
     if output_path:
@@ -220,7 +202,6 @@ def detect_faces_video(
             show=False,
             blur=blur,
             as_json=True,
-            google_search=google_search,
         )
         processed = cv2.imread(tmp)
         if show_info:
@@ -297,9 +278,7 @@ def main() -> None:
     parser.add_argument(
         "--save-db", action="store_true", help="Salva resultado no banco"
     )
-    parser.add_argument(
-        "--google-search", action="store_true", help="Busca rostos no Google"
-    )
+
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -314,7 +293,6 @@ def main() -> None:
                 show=args.show,
                 blur=args.blur,
                 show_info=args.info,
-                google_search=args.google_search,
             )
             qtd = None
         else:
@@ -327,7 +305,6 @@ def main() -> None:
                 blur=args.blur,
                 as_json=args.json,
                 save_db=args.save_db,
-                google_search=args.google_search,
             )
     except FileNotFoundError as exc:
         logger.error(exc)
