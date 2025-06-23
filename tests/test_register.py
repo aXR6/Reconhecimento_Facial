@@ -49,4 +49,4 @@ def test_register_person_webcam_social(monkeypatch):
 
     ok = rec.register_person_webcam("Alice", google_search=True)
     assert ok
-    assert called["bg"][0] == "/tmp/Alice.jpg"
+    assert called["bg"][0] == os.path.join("photos", "Alice.jpg")

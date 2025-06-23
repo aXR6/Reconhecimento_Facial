@@ -219,9 +219,10 @@ def register_person_webcam(
         ok = register_person(name, tmp)
         if ok:
             if google_search:
+                photo = str(Path(PHOTOS_DIR) / Path(tmp).name)
                 thr = threading.Thread(
                     target=_google_search_background,
-                    args=(tmp,),
+                    args=(photo,),
                     daemon=True,
                 )
                 thr.start()
@@ -356,13 +357,11 @@ def recognize_webcam(*, google_search: bool = False) -> None:
                 2,
             )
 
-            _save_cropped_face(crop, name, "face_recognition")
+            saved = _save_cropped_face(crop, name, "face_recognition")
             if google_search and name != "Unknown" and name not in seen:
-                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-                cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
                     target=_google_search_background,
-                    args=(tmp.name,),
+                    args=(str(saved),),
                     daemon=True,
                 )
                 thr.start()
@@ -458,13 +457,11 @@ def recognize_webcam_mediapipe(*, google_search: bool = False) -> None:
                 (0, 255, 0),
                 2,
             )
-            _save_cropped_face(crop, name, "mediapipe")
+            saved = _save_cropped_face(crop, name, "mediapipe")
             if google_search and name != "Unknown" and name not in seen:
-                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-                cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
                     target=_google_search_background,
-                    args=(tmp.name,),
+                    args=(str(saved),),
                     daemon=True,
                 )
                 thr.start()
@@ -521,13 +518,11 @@ def demographics_webcam(*, google_search: bool = False) -> None:
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
 
-            _save_cropped_face(crop, name, "facexformer")
+            saved = _save_cropped_face(crop, name, "facexformer")
             if google_search and name != "Unknown" and name not in seen:
-                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-                cv2.imwrite(tmp.name, crop)
                 thr = threading.Thread(
                     target=_google_search_background,
-                    args=(tmp.name,),
+                    args=(str(saved),),
                     daemon=True,
                 )
                 thr.start()
