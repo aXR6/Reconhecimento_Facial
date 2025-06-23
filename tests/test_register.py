@@ -35,8 +35,17 @@ def import_rec(monkeypatch):
 def test_register_person_webcam_social(monkeypatch):
     rec = import_rec(monkeypatch)
     called = {}
-    monkeypatch.setattr(rec, "capture_from_webcam", lambda p: True)
-    monkeypatch.setattr(rec, "register_person", lambda n, p: True)
+
+    monkeypatch.setattr(rec, "capture_from_webcam", lambda p: "face.jpg")
+
+    def _reg(name, img):
+        called["name"] = name
+        called["img"] = img
+        return True
+
+    monkeypatch.setattr(rec, "register_person", _reg)
 
     ok = rec.register_person_webcam("Alice")
     assert ok
+    assert called["name"] == "Alice"
+    assert called["img"] == "face.jpg"
