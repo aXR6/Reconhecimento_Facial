@@ -99,7 +99,7 @@ def _crop_and_save_face(image_path: str) -> None:
 
 def _save_cropped_face(crop: np.ndarray, name: str, tech: str) -> Path:
     """Save cropped face image using standardized naming."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%d_%m_%Y")
     clean_name = name.replace(" ", "_") or "Unknown"
     filename = f"{clean_name}_{timestamp}_{tech}.jpg"
     out_path = Path(PHOTOS_DIR) / filename
