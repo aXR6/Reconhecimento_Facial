@@ -44,11 +44,11 @@ Você também pode executar comandos específicos diretamente pela CLI:
 python3 -m reconhecimento_facial.face_detection --image caminho/para/imagem.jpg --output saida.jpg
 python3 -m reconhecimento_facial.app detect --image caminho/para/imagem.jpg --model yolov8
 python3 -m reconhecimento_facial.recognition --webcam
-python3 -m reconhecimento_facial.recognition --image foto.jpg --social-search --site facebook
+python3 -m reconhecimento_facial.recognition --image foto.jpg --google-search
 python3 -m reconhecimento_facial.whisper_translation --model openai/whisper-large-v3-turbo --chunk 5 --src pt --webcam
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --src pt --expected "texto esperado"
 python3 -m reconhecimento_facial.whisper_translation --file caminho/para/audio.wav --transcribe --src pt
-python3 -m reconhecimento_facial.social_search --image foto.jpg --db caminho/para/db --site facebook --site instagram
+python3 -m reconhecimento_facial.google_search --image foto.jpg
 ```
 
 ## Organização dos menus
@@ -71,18 +71,14 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Seleção entre processamento via CPU ou GPU.
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
-- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 - `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - A tradução pode ser ativada ou desativada a qualquer momento no menu **Outros**.
 - É possível escolher o idioma de entrada e o de saída para tradução.
-- Busca de perfis em imagens locais através do recurso `social-search`.
-- Reconhecimento de rostos com busca automática em redes sociais (o menu já inicia a busca por padrão).
-- Cadastro de pessoas pela webcam com opção de buscar o rosto nas redes sociais.
+- Pesquisa de rostos diretamente no Google.
 
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
-- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 
 ## Variáveis de ambiente
 
@@ -94,7 +90,6 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `WHISPER_MODEL`: modelo padrão do Whisper para tradução de áudio (padrão: `openai/whisper-large-v3-turbo`).
 - `RF_DEVICE`: define o dispositivo de processamento (`auto`, `cpu` ou `gpu`).
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
-- `SOCIAL_DB_PATH`: diretorio para imagens do social-search.
 - `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 
 ## Requisitos

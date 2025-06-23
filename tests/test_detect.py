@@ -101,7 +101,7 @@ def test_detect_hf_increment_yolov8(monkeypatch, tmp_path):
     assert count == 1
 
 
-def test_detect_social_search(monkeypatch, tmp_path):
+def test_detect_google_search(monkeypatch, tmp_path):
     import types
 
     img = np.zeros((100, 100, 3), dtype=np.uint8)
@@ -123,14 +123,13 @@ def test_detect_social_search(monkeypatch, tmp_path):
 
     monkeypatch.setattr(fd_mod.threading, "Thread", dummy_thr)
     monkeypatch.setattr(
-        fd_mod, "_social_search_background", lambda *a: called.update({"bg": a})
+        fd_mod, "_google_search_background", lambda *a: called.update({"bg": a})
     )
 
     fd_mod.detect_faces(
         str(img_path),
         str(tmp_path / "out.jpg"),
-        social_search=True,
-        sites=["facebook"],
+        google_search=True,
     )
 
     assert "bg" in called
