@@ -11,6 +11,9 @@ from importlib.util import find_spec
 import cv2
 import os
 
+PHOTOS_DIR = os.getenv("PHOTOS_DIR", "photos")
+Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
+
 if __package__ is None or __package__ == "":
     import pathlib
     import sys as _sys
@@ -64,6 +67,35 @@ from reconhecimento_facial.demographics_detection import detect_demographics
 from reconhecimento_facial.facexformer import analyze_face
 from reconhecimento_facial.social_search import run_social_search
 
+
+def _crop_and_save_face(image_path: str) -> None:
+    """Recorta o primeiro rosto encontrado e salva em ``PHOTOS_DIR``."""
+    img = cv2.imread(image_path)
+    if img is None:
+        return
+    crop = None
+    if face_recognition is not None:
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        locs = face_recognition.face_locations(rgb)
+        if locs:
+            top, right, bottom, left = locs[0]
+            crop = img[top:bottom, left:right]
+    if crop is None:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        faces = cascade.detectMultiScale(gray, 1.1, 5)
+        if len(faces) > 0:
+            x, y, w, h = faces[0]
+            crop = img[y : y + h, x : x + w]
+    if crop is not None:
+        Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
+        out_path = Path(PHOTOS_DIR) / Path(image_path).name
+        cv2.imwrite(str(out_path), crop)
+        cv2.imwrite(image_path, crop)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,6 +146,7 @@ def capture_from_webcam(tmp_path: str) -> bool:
         key = cv2.waitKey(1) & 0xFF
         if key in (ord("c"), ord(" ")):
             cv2.imwrite(tmp_path, frame)
+            _crop_and_save_face(tmp_path)
             captured = True
             break
         if key == ord("q"):
@@ -346,16 +379,9 @@ def recognize_webcam(
             if social_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
-                thr = threading.Thread(
-                    target=_social_search_background,
-                    args=(tmp.name, name, _sites, db_path),
-                    daemon=True,
-                )
-                thr.start()
-                seen.add(name)
-            if social_search and name != "Unknown" and name not in seen:
-                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-                cv2.imwrite(tmp.name, crop)
+                out_file = Path(PHOTOS_DIR) / Path(tmp.name).name
+                Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(str(out_file), crop)
                 thr = threading.Thread(
                     target=_social_search_background,
                     args=(tmp.name, name, _sites, db_path),
@@ -463,6 +489,9 @@ def recognize_webcam_mediapipe(
             if social_search and name != "Unknown" and name not in seen:
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
                 cv2.imwrite(tmp.name, crop)
+                out_file = Path(PHOTOS_DIR) / Path(tmp.name).name
+                Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(str(out_file), crop)
                 thr = threading.Thread(
                     target=_social_search_background,
                     args=(tmp.name, name, _sites, db_path),
