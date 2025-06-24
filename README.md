@@ -85,6 +85,12 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 Execute o servidor Flask com:
 
 ```bash
+face-web
+```
+
+Ou, se preferir, ainda é possível usar:
+
+```bash
 python -m reconhecimento_facial.web_app
 ```
 
