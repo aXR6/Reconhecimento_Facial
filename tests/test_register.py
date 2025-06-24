@@ -48,3 +48,19 @@ def test_register_person_webcam_social(monkeypatch):
     assert ok
     assert called["name"] == "Alice"
     assert called["img"] == "face.jpg"
+
+def test_register_person_cli(monkeypatch):
+    rec = import_rec(monkeypatch)
+    called = {}
+
+    def _reg(name, img):
+        called["name"] = name
+        called["img"] = img
+        return True
+
+    monkeypatch.setattr(rec, "register_person", _reg)
+
+    ok = rec.register_person_cli("img.jpg", "Bob")
+    assert ok
+    assert called["name"] == "Bob"
+    assert called["img"] == "img.jpg"

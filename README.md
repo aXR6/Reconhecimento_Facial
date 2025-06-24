@@ -18,6 +18,7 @@ source init-env.sh
 ```
 
 Esse script cria (caso ainda não exista) e ativa o virtualenv automaticamente.
+Execute `face-preload` para baixar todos os modelos necessarios antes do primeiro uso.
 
 ## Executando
 
@@ -58,7 +59,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 
 1. **Detecção** – identifica rostos (inclusive via webcam) ou obstruções nas imagens.
 2. **Reconhecimento** – para realizar reconhecimento facial ou exibir demografia via webcam.
-3. **Cadastrar pessoa** – registra uma nova pessoa utilizando a webcam.
+3. **Cadastrar pessoa** – registra uma nova pessoa usando a webcam ou uma imagem com `--register-image`
 4. **Outros** – onde é possível gerar legendas para imagens usando um modelo de linguagem.
 
 ## Funcionalidades
@@ -73,6 +74,7 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - Opção de desfocar rostos para privacidade.
 - Armazenamento de resultados em PostgreSQL (via `POSTGRES_DSN`).
 - `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
+- `RF_THRESHOLD`: limiar para comparacao de embeddings (padrao 0.6)
 - Interface web em Flask e Dockerfile para facilitar a execução.
 - Tradução de fala em tempo real via OpenAI Whisper (use `--webcam` para traduzir enquanto a webcam está aberta).
 - A tradução pode ser ativada ou desativada a qualquer momento no menu **Outros**.
