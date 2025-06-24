@@ -29,6 +29,7 @@ from reconhecimento_facial.whisper_translation import (
     DEFAULT_WHISPER_MODEL,
     translate_microphone,
 )
+from reconhecimento_facial.db import list_people, delete_person
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,49 @@ def _device_menu() -> None:
         print(f"Dispositivo selecionado: {choice}")
 
 
+def _manage_people_menu() -> None:
+    """Menu to list and remove registered people."""
+    options = ["Listar pessoas", "Remover pessoa", "Voltar"]
+    while True:
+        choice = questionary.select("Gerenciar pessoas", choices=options).ask()
+        if choice in (None, "Voltar"):
+            break
+
+        if choice == options[0]:
+            try:
+                people = list_people()
+            except Exception as exc:  # noqa: BLE001
+                print(f"Erro ao listar pessoas: {exc}")
+                continue
+            if not people:
+                print("Nenhuma pessoa cadastrada")
+            else:
+                print("Pessoas cadastradas:")
+                for name in people:
+                    print(f"- {name}")
+            input("Pressione Enter para continuar...")
+        elif choice == options[1]:
+            try:
+                people = list_people()
+            except Exception as exc:  # noqa: BLE001
+                print(f"Erro ao obter pessoas: {exc}")
+                continue
+            if not people:
+                print("Nenhuma pessoa cadastrada")
+                time.sleep(1)
+                continue
+            name = questionary.select("Selecione a pessoa", choices=people).ask()
+            if name:
+                try:
+                    removed = delete_person(name)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"Erro ao remover pessoa: {exc}")
+                    continue
+                msg = "Pessoa removida" if removed else "Pessoa não encontrada"
+                print(msg)
+                time.sleep(1)
+
+
 def _other_menu() -> None:
     global _translation_enabled
     base_options = [
@@ -176,7 +220,7 @@ def _other_menu() -> None:
     ]
     while True:
         opts = base_options.copy()
-        opts[2] = (
+        opts[3] = (
             "Desativar tradução em tempo real"
             if _translation_enabled
             else "Ativar tradução em tempo real"
