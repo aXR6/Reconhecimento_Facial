@@ -80,6 +80,27 @@ O programa principal (`app.py`) apresenta quatro categorias principais:
 - A tradução pode ser ativada ou desativada a qualquer momento no menu **Outros**.
 - É possível escolher o idioma de entrada e o de saída para tradução.
 
+## Servidor web
+
+Execute o servidor Flask com:
+
+```bash
+python -m reconhecimento_facial.web_app
+```
+
+Ele ficará escutando em `0.0.0.0:8000`. Exemplos de requisições:
+
+```bash
+# Processa uma imagem
+curl -F 'file=@foto.jpg' http://localhost:8000/process
+
+# Lista pessoas cadastradas
+curl http://localhost:8000/people
+
+# Lista as últimas detecções
+curl http://localhost:8000/detections
+```
+
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
 
 ## Variáveis de ambiente
