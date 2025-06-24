@@ -167,46 +167,50 @@ def _device_menu() -> None:
 
 
 def _manage_people_menu() -> None:
-    """Menu to list and remove registered people."""
-    options = ["Listar pessoas", "Remover pessoa", "Voltar"]
+    """Display registered people and optionally remove a person."""
+    menu_opts = ["Listar pessoas", "Remover pessoa", "Voltar"]
     while True:
-        choice = questionary.select("Gerenciar pessoas", choices=options).ask()
+        choice = questionary.select(
+            "Gerenciar pessoas", choices=menu_opts
+        ).ask()
         if choice in (None, "Voltar"):
             break
 
-        if choice == options[0]:
+        if choice == "Listar pessoas":
             try:
-                people = list_people()
+                names = list_people()
             except Exception as exc:  # noqa: BLE001
                 print(f"Erro ao listar pessoas: {exc}")
                 continue
-            if not people:
+            if not names:
                 print("Nenhuma pessoa cadastrada")
             else:
                 print("Pessoas cadastradas:")
-                for name in people:
+                for name in names:
                     print(f"- {name}")
             input("Pressione Enter para continuar...")
-        elif choice == options[1]:
+        elif choice == "Remover pessoa":
             try:
-                people = list_people()
+                names = list_people()
             except Exception as exc:  # noqa: BLE001
                 print(f"Erro ao obter pessoas: {exc}")
                 continue
-            if not people:
+            if not names:
                 print("Nenhuma pessoa cadastrada")
                 time.sleep(1)
                 continue
-            name = questionary.select("Selecione a pessoa", choices=people).ask()
-            if name:
-                try:
-                    removed = delete_person(name)
-                except Exception as exc:  # noqa: BLE001
-                    print(f"Erro ao remover pessoa: {exc}")
-                    continue
-                msg = "Pessoa removida" if removed else "Pessoa não encontrada"
-                print(msg)
-                time.sleep(1)
+
+            name = questionary.select("Selecione a pessoa", choices=names).ask()
+            if not name:
+                continue
+            try:
+                removed = delete_person(name)
+            except Exception as exc:  # noqa: BLE001
+                print(f"Erro ao remover pessoa: {exc}")
+                continue
+            msg = "Pessoa removida" if removed else "Pessoa não encontrada"
+            print(msg)
+            time.sleep(1)
 
 
 def _other_menu() -> None:
