@@ -13,6 +13,7 @@ import cv2
 import os
 
 PHOTOS_DIR = os.getenv("PHOTOS_DIR", "photos")
+RECOGNITION_THRESHOLD = float(os.getenv("RF_THRESHOLD", "0.6"))
 Path(PHOTOS_DIR).mkdir(parents=True, exist_ok=True)
 
 if __package__ is None or __package__ == "":
@@ -226,6 +227,10 @@ def register_person(name: str, image_path: str) -> bool:
         conn.commit()
     return True
 
+def register_person_cli(image_path: str, name: str) -> bool:
+    """Register person from image via CLI."""
+    return register_person(name, image_path)
+
 
 def register_person_webcam(name: str) -> bool:
     """Capture an image from the webcam and register the person.
@@ -275,7 +280,7 @@ def recognize_faces(image_path: str) -> list[str]:
             continue
         dists = face_recognition.face_distance(encs, face_enc)
         best = dists.argmin()
-        if dists[best] < 0.6:
+        if dists[best] < RECOGNITION_THRESHOLD:
             recognized.append(names[best])
     return recognized
 
@@ -316,7 +321,7 @@ def recognize_webcam() -> None:
                 if encs:
                     dists = face_recognition.face_distance(encs, face_enc)
                     best = dists.argmin()
-                    if dists[best] < 0.6:
+                    if dists[best] < RECOGNITION_THRESHOLD:
                         name = names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
@@ -407,7 +412,7 @@ def recognize_webcam_mediapipe() -> None:
                 if encs:
                     dists = face_recognition.face_distance(encs, face_enc)
                     best = dists.argmin()
-                    if dists[best] < 0.6:
+                    if dists[best] < RECOGNITION_THRESHOLD:
                         name = names[best]
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             crop = frame[top:bottom, left:right]
@@ -489,7 +494,7 @@ def demographics_webcam() -> None:
                 if encs:
                     dists = face_recognition.face_distance(encs, face_enc)
                     best = dists.argmin()
-                    if dists[best] < 0.6:
+                    if dists[best] < RECOGNITION_THRESHOLD:
                         name = names[best]
 
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
@@ -596,11 +601,18 @@ if __name__ == "__main__":  # pragma: no cover - CLI helper
     import argparse
 
     parser = argparse.ArgumentParser(description="Reconhecimento facial")
+    parser.add_argument("--threshold", type=float, help="Limiar de reconhecimento")
+    parser.add_argument("--register-image", help="Imagem para cadastrar")
+    parser.add_argument("--name", help="Nome da pessoa")
     parser.add_argument("--webcam", action="store_true", help="Usa webcam")
     parser.add_argument("--image", help="Imagem para reconhecer", nargs="?")
     args = parser.parse_args()
+    if args.threshold is not None:
+        RECOGNITION_THRESHOLD = args.threshold
 
     if args.webcam:
         recognize_webcam()
     elif args.image:
         print(recognize_faces(args.image))
+    elif args.register_image and args.name:
+        register_person_cli(args.register_image, args.name)

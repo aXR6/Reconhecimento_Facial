@@ -168,6 +168,7 @@ def _device_menu() -> None:
 def _other_menu() -> None:
     global _translation_enabled
     base_options = [
+        "Precarregar modelos",
         "Gerar legenda via LLM",
         "Selecionar dispositivo",
         "",
@@ -185,15 +186,18 @@ def _other_menu() -> None:
             break
 
         if choice == opts[0]:
+            from reconhecimento_facial.preload import preload_models
+            preload_models()
+        elif choice == opts[1]:
             image = input("Caminho da imagem: ").strip()
             try:
                 caption = generate_caption(image)
                 print(f"Legenda gerada: {caption}")
             except Exception as exc:
                 print(f"Erro ao gerar legenda: {exc}")
-        elif choice == opts[1]:
-            _device_menu()
         elif choice == opts[2]:
+            _device_menu()
+        elif choice == opts[3]:
             _translation_enabled = not _translation_enabled
             status = "ativada" if _translation_enabled else "desativada"
             print(f"Tradução {status}")
@@ -207,6 +211,7 @@ def menu() -> None:
             "Detecção",
             "Reconhecimento",
             "Cadastrar pessoa (face_recognition)",
+            "Gerenciar pessoas",
             "Outros",
             "Sair",
         ]
@@ -229,6 +234,8 @@ def menu() -> None:
             except Exception as exc:
                 print(f"Erro ao cadastrar: {exc}")
         elif choice == main_opts[3]:
+            _manage_people_menu()
+        elif choice == main_opts[4]:
             _other_menu()
 
 

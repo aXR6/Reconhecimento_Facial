@@ -99,3 +99,37 @@ def get_people() -> list[tuple[str, bytes]]:
         cur.execute("SELECT name, photo FROM people")
         rows = cur.fetchall()
         return [(r[0], bytes(r[1]) if r[1] is not None else b"") for r in rows]
+
+def list_people() -> list[str]:
+    """Return only the names of registered people."""
+    with get_conn() as conn:
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM people ORDER BY name")
+        rows = cur.fetchall()
+        return [r[0] for r in rows]
+
+
+def delete_person(name: str) -> bool:
+    """Remove a person by name."""
+    with get_conn() as conn:
+        if conn is None:
+            return False
+        cur = conn.cursor()
+        cur.execute("DELETE FROM people WHERE name=%s", (name,))
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def list_detections(limit: int = 100) -> list[tuple]:
+    """Return recent detections."""
+    with get_conn() as conn:
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, image, faces, caption, obstruction, recognized, created_at FROM detections ORDER BY id DESC LIMIT %s",
+            (limit,),
+        )
+        return cur.fetchall()
