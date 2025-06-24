@@ -35,6 +35,7 @@ face-detect = "reconhecimento_facial.face_detection:main"
 face-app = "reconhecimento_facial.app:main"
 whisper-translate = "reconhecimento_facial.whisper_translation:main"
 face-preload = "reconhecimento_facial.preload:preload_models"
+face-web = "reconhecimento_facial.web_app:app.run"
 
 [tool.pytest.ini_options]
 addopts = "-p no:dash -vv"
