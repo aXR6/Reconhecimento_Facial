@@ -107,6 +107,10 @@ curl http://localhost:8000/people
 curl http://localhost:8000/detections
 ```
 
+Também é possível acessar uma interface gráfica completa via navegador em
+`http://localhost:8000/`. Todas as funcionalidades disponíveis na linha de
+comando podem ser acessadas por essa página inicial.
+
 Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas as dependências podem ser instaladas utilizando o `pyproject.toml`. A variável `POSTGRES_DSN` **deve** ser definida nesse arquivo caso queira usar o banco de dados.
 
 ## Variáveis de ambiente

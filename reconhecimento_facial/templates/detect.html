@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+    <p>Imagem: <input type="file" name="image" required></p>
+    <p>
+        Modelo:
+        <select name="model">
+            <option value="opencv">OpenCV</option>
+            <option value="mediapipe">MediaPipe</option>
+            <option value="yolov8">YOLOv8</option>
+        </select>
+    </p>
+    <button type="submit">Detectar</button>
+</form>
+{% if faces is not none %}
+<p>{{ faces }} rosto(s) detectado(s) usando {{ model }}.</p>
+<img src="data:image/jpeg;base64,{{ image }}" alt="Resultado">
+{% endif %}
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+{% endblock %}

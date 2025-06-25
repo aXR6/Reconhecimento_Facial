@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Pessoas cadastradas</h2>
+<ul>
+{% for n in names %}<li>{{ n }}</li>{% else %}<li>Nenhuma pessoa cadastrada</li>{% endfor %}
+</ul>
+{% endblock %}
