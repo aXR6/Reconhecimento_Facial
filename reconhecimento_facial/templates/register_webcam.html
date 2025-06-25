@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<p>Nome: <input type="text" id="name"></p>
+<video id="video" width="640" height="480" autoplay></video><br>
+<button id="capture">Capturar</button>
+<p id="result"></p>
+<script>
+const video = document.getElementById('video');
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => { video.srcObject = stream; })
+  .catch(err => { console.error('webcam error', err); });
+
+document.getElementById('capture').onclick = () => {
+  const name = document.getElementById('name').value.trim();
+  if (!name) {
+    document.getElementById('result').innerText = 'Informe o nome';
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(blob => {
+    const data = new FormData();
+    data.append('image', blob, 'capture.jpg');
+    data.append('name', name);
+    fetch('/register_api', { method: 'POST', body: data })
+      .then(r => r.json())
+      .then(j => { document.getElementById('result').innerText = j.success ? 'OK' : 'Erro'; })
+      .catch(() => { document.getElementById('result').innerText = 'erro'; });
+  }, 'image/jpeg');
+};
+</script>
+{% endblock %}

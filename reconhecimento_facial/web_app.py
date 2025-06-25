@@ -46,6 +46,18 @@ def list_detections(limit: int = 100):  # noqa: D401 - wrapper for lazy import
 
     return _ld(limit)
 
+def detect_demographics_lazy(*args, **kwargs):
+    """Call :func:`demographics_detection.detect_demographics` lazily."""
+    from reconhecimento_facial.demographics_detection import detect_demographics as _dd
+    return _dd(*args, **kwargs)
+
+def translate_audio_file(path: str, src: str, dst: str, transcribe: bool = False) -> str:
+    """Translate or transcribe audio using Whisper."""
+    from reconhecimento_facial.whisper_translation import translate_file, transcribe_file
+    if transcribe:
+        return transcribe_file(path, source_lang=src)
+    return translate_file(path, source_lang=src, target_lang=dst)
+
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
@@ -124,6 +136,35 @@ def obstruction_page() -> str:
         return render_template('obstruction.html', label=label)
     return render_template('obstruction.html')
 
+@app.route('/demographics', methods=['GET', 'POST'])
+def demographics_page() -> str:
+    """Detect demographics in an uploaded image."""
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if not file:
+            return render_template('demographics.html', error='Selecione uma imagem')
+        img_path = '/tmp/demographics.jpg'
+        file.save(img_path)
+        info = detect_demographics_lazy(img_path)
+        return render_template('demographics.html', info=info)
+    return render_template('demographics.html')
+
+@app.route('/translate', methods=['GET', 'POST'])
+def translate_page() -> str:
+    """Translate or transcribe an uploaded audio file."""
+    if request.method == 'POST':
+        file = request.files.get('audio')
+        src = request.form.get('src', 'pt')
+        dst = request.form.get('dst', 'en')
+        mode = request.form.get('mode', 'translate')
+        if not file:
+            return render_template('translate.html', error='Selecione um arquivo')
+        audio_path = '/tmp/audio'
+        file.save(audio_path)
+        text = translate_audio_file(audio_path, src, dst, transcribe=(mode == 'transcribe'))
+        return render_template('translate.html', text=text, src=src, dst=dst, mode=mode)
+    return render_template('translate.html')
+
 
 @app.route('/recognize', methods=['GET', 'POST'])
 def recognize_page() -> str:
@@ -154,6 +195,19 @@ def recognize_api():
     names = recognize_faces(img_path)
     return jsonify({'names': names})
 
+@app.route('/register_api', methods=['POST'])
+def register_api():
+    """Register a person using an uploaded image and return JSON."""
+    file = request.files.get('image')
+    name = request.form.get('name', '').strip()
+    if not file or not name:
+        return {'error': 'missing data'}, 400
+    img_path = '/tmp/register_api.jpg'
+    file.save(img_path)
+    from reconhecimento_facial.recognition import register_person_cli
+    ok = register_person_cli(img_path, name)
+    return jsonify({'success': ok})
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_page() -> str:
@@ -176,6 +230,10 @@ def register_page() -> str:
 def webcam_page() -> str:
     """Display a simple webcam interface."""
     return render_template('webcam.html')
+@app.route('/register_webcam')
+def register_webcam_page() -> str:
+    """Show webcam interface to register a person."""
+    return render_template('register_webcam.html')
 
 
 @app.route('/people_view')
@@ -215,6 +273,14 @@ def detections():
         for r in rows
     ]
     return jsonify(res)
+@app.route('/preload', methods=['GET', 'POST'])
+def preload_page() -> str:
+    """Preload all models."""
+    if request.method == 'POST':
+        from reconhecimento_facial.preload import preload_models
+        preload_models()
+        return render_template('preload.html', success=True)
+    return render_template('preload.html')
 
 
 if __name__ == '__main__':
