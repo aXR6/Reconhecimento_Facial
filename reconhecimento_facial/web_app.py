@@ -141,6 +141,20 @@ def recognize_page() -> str:
     return render_template('recognize.html')
 
 
+@app.route('/recognize_api', methods=['POST'])
+def recognize_api():
+    """Recognize faces and return JSON."""
+    file = request.files.get('image')
+    if not file:
+        return {'error': 'no file'}, 400
+    img_path = '/tmp/recognize.jpg'
+    file.save(img_path)
+    from reconhecimento_facial.recognition import recognize_faces
+
+    names = recognize_faces(img_path)
+    return jsonify({'names': names})
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register_page() -> str:
     """Register a person by uploading a photo."""
@@ -156,6 +170,12 @@ def register_page() -> str:
         ok = register_person_cli(img_path, name)
         return render_template('register.html', success=ok)
     return render_template('register.html')
+
+
+@app.route('/webcam')
+def webcam_page() -> str:
+    """Display a simple webcam interface."""
+    return render_template('webcam.html')
 
 
 @app.route('/people_view')
