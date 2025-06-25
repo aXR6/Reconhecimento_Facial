@@ -1,9 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
-<video id="video" width="640" height="480" autoplay></video>
+<div style="position:relative; display:inline-block;">
+  <video id="video" width="640" height="480" autoplay></video>
+  <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
+</div>
 <br>
 <button id="capture">Iniciar</button>
 <p id="result"></p>
+<pre id="fxdata" style="white-space: pre-wrap;"></pre>
 <script>
 const video = document.getElementById('video');
 navigator.mediaDevices.getUserMedia({ video: true })
@@ -20,7 +24,28 @@ function capture() {
     data.append('image', blob, 'capture.jpg');
     fetch('/recognize_api', { method: 'POST', body: data })
       .then(r => r.json())
-      .then(j => { document.getElementById('result').innerText = (j.names || []).join(', '); })
+      .then(j => {
+        document.getElementById('result').innerText = (j.names || []).join(', ');
+        const ctx = document.getElementById('overlay').getContext('2d');
+        ctx.canvas.width = video.videoWidth;
+        ctx.canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const info = [];
+        (j.faces || []).forEach(face => {
+          const [top, right, bottom, left] = face.box;
+          ctx.strokeStyle = 'green';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(left, top, right - left, bottom - top);
+          ctx.fillStyle = 'green';
+          ctx.font = '16px sans-serif';
+          ctx.fillText(face.name, left, top - 5);
+          const d = face.analysis || {};
+          const details = [d.gender, d.age, d.ethnicity, d.skin].filter(Boolean).join(', ');
+          if (details) ctx.fillText(details, left, top + 15);
+          info.push(JSON.stringify(face.analysis));
+        });
+        document.getElementById('fxdata').innerText = info.join('\n');
+      })
       .catch(() => { document.getElementById('result').innerText = 'erro'; });
   }, 'image/jpeg');
 }

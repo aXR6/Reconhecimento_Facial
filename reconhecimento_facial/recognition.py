@@ -285,6 +285,62 @@ def recognize_faces(image_path: str) -> list[str]:
     return recognized
 
 
+def recognize_faces_with_analysis(image_path: str) -> list[dict[str, Any]]:
+    """Recognize faces and return detailed analysis results.
+
+    Each returned dictionary contains the bounding box (``box``), the
+    recognized ``name`` and the full FaceXFormer ``analysis`` dictionary.
+    """
+    if face_recognition is None:
+        logger.error("face_recognition not installed")
+        return []
+
+    rgb = face_recognition.load_image_file(image_path)
+    locations = face_recognition.face_locations(rgb)
+    encodings = face_recognition.face_encodings(rgb, locations)
+
+    with get_conn() as conn:
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        cur.execute("SELECT name, embedding FROM people")
+        data = cur.fetchall()
+
+    known_names = [row[0] for row in data]
+    known_encodings = [np.frombuffer(row[1], dtype=np.float64) for row in data]
+
+    bgr = rgb[:, :, ::-1]  # convert to BGR for FaceXFormer
+    results: list[dict[str, Any]] = []
+    for (top, right, bottom, left), face_enc in zip(locations, encodings):
+        name = "Unknown"
+        if known_encodings:
+            names, encs = _filter_by_length(
+                known_names, known_encodings, len(face_enc)
+            )
+            if encs:
+                dists = face_recognition.face_distance(encs, face_enc)
+                best = dists.argmin()
+                if dists[best] < RECOGNITION_THRESHOLD:
+                    name = names[best]
+
+        crop = bgr[top:bottom, left:right]
+        analysis: dict[str, Any] = {}
+        try:
+            analysis = analyze_face(crop)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("facexformer error: %s", exc)
+
+        results.append(
+            {
+                "box": [int(top), int(right), int(bottom), int(left)],
+                "name": name,
+                "analysis": analysis,
+            }
+        )
+
+    return results
+
+
 
 
 def recognize_webcam() -> None:
