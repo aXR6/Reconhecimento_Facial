@@ -3,17 +3,50 @@
 <head>
     <meta charset="utf-8">
     <title>Reconhecimento Facial</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        nav summary { cursor: pointer; font-weight: bold; }
+        nav ul { list-style: none; padding-left: 1em; margin-top: 0; }
+        nav li { margin: 0.2em 0; }
+        nav { margin-bottom: 1em; }
+    </style>
 </head>
 <body>
 <h1>Reconhecimento Facial</h1>
 <nav>
-    <a href="/">Início</a> |
-    <a href="/detect">Detecção</a> |
-    <a href="/caption">Legenda</a> |
-    <a href="/obstruction">Obstrução</a> |
-    <a href="/register">Cadastrar Pessoa</a> |
-    <a href="/people_view">Pessoas</a> |
-    <a href="/detections_view">Detecções</a>
+    <a href="/">Início</a>
+    <details>
+        <summary>Detecção</summary>
+        <ul>
+            <li><a href="/detect">Rostos</a></li>
+            <li><a href="/obstruction">Obstrução</a></li>
+        </ul>
+    </details>
+    <details>
+        <summary>Reconhecimento</summary>
+        <ul>
+            <li><a href="/recognize">Reconhecer imagem</a></li>
+        </ul>
+    </details>
+    <details>
+        <summary>Cadastrar pessoa (face_recognition)</summary>
+        <ul>
+            <li><a href="/register">Cadastrar</a></li>
+        </ul>
+    </details>
+    <details>
+        <summary>Gerenciar pessoas</summary>
+        <ul>
+            <li><a href="/people_view">Listar pessoas</a></li>
+            <li><a href="/detections_view">Detecções</a></li>
+        </ul>
+    </details>
+    <details>
+        <summary>Outros</summary>
+        <ul>
+            <li><a href="/caption">Legenda</a></li>
+        </ul>
+    </details>
 </nav>
 <hr>
 {% block content %}{% endblock %}

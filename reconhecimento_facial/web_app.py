@@ -125,6 +125,22 @@ def obstruction_page() -> str:
     return render_template('obstruction.html')
 
 
+@app.route('/recognize', methods=['GET', 'POST'])
+def recognize_page() -> str:
+    """Recognize faces in an uploaded image."""
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if not file:
+            return render_template('recognize.html', error='Selecione uma imagem')
+        img_path = '/tmp/recognize.jpg'
+        file.save(img_path)
+        from reconhecimento_facial.recognition import recognize_faces
+
+        names = recognize_faces(img_path)
+        return render_template('recognize.html', names=names)
+    return render_template('recognize.html')
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register_page() -> str:
     """Register a person by uploading a photo."""
