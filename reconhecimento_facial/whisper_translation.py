@@ -3,7 +3,7 @@ import logging
 import os
 import queue
 import threading
-from typing import Optional
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -170,6 +170,7 @@ def translate_microphone(
     source_lang: str = "pt",
     target_lang: str = "en",
     translate: bool = True,
+    on_text: Optional[Callable[[str], None]] = None,
 ) -> None:
     """Capture audio and optionally translate chunks using Whisper.
 
@@ -229,7 +230,10 @@ def translate_microphone(
                             if translate and target_lang != source_lang:
                                 text = _translate_text(text, source_lang, target_lang)
                             if text:
-                                print(text)
+                                if on_text is not None:
+                                    on_text(text)
+                                else:
+                                    print(text)
                     except Exception as exc:  # noqa: BLE001
                         logger.error("Erro na transcri\u00e7\u00e3o: %s", exc)
                     buffer = np.empty((0, 1), dtype=np.float32)

@@ -2,15 +2,15 @@
 {% block content %}
 <video id="video" width="640" height="480" autoplay></video>
 <br>
-<button id="capture">Capturar</button>
+<button id="capture">Iniciar</button>
 <p id="result"></p>
 <script>
 const video = document.getElementById('video');
 navigator.mediaDevices.getUserMedia({ video: true })
   .then(stream => { video.srcObject = stream; })
   .catch(err => { console.error('webcam error', err); });
-
-document.getElementById('capture').onclick = () => {
+let interval = null;
+function capture() {
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -23,6 +23,17 @@ document.getElementById('capture').onclick = () => {
       .then(j => { document.getElementById('result').innerText = (j.names || []).join(', '); })
       .catch(() => { document.getElementById('result').innerText = 'erro'; });
   }, 'image/jpeg');
+}
+document.getElementById('capture').onclick = () => {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+    document.getElementById('capture').innerText = 'Iniciar';
+    return;
+  }
+  capture();
+  interval = setInterval(capture, 2000);
+  document.getElementById('capture').innerText = 'Parar';
 };
 </script>
 {% endblock %}

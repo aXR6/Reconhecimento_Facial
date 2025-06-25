@@ -1,4 +1,6 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response
+import queue
+import threading
 
 if __package__ is None or __package__ == "":
     import pathlib
@@ -57,6 +59,31 @@ def translate_audio_file(path: str, src: str, dst: str, transcribe: bool = False
     if transcribe:
         return transcribe_file(path, source_lang=src)
     return translate_file(path, source_lang=src, target_lang=dst)
+
+
+def stream_translation(src: str, dst: str, mode: str):
+    """Yield translated text using server-sent events."""
+    from reconhecimento_facial.whisper_translation import translate_microphone, DEFAULT_WHISPER_MODEL
+    q: queue.Queue[str] = queue.Queue()
+    stop_event = threading.Event()
+
+    def _cb(txt: str) -> None:
+        q.put(txt)
+
+    thr = threading.Thread(
+        target=translate_microphone,
+        args=(DEFAULT_WHISPER_MODEL, 5, stop_event, src, dst, mode != 'transcribe', _cb),
+        daemon=True,
+    )
+    thr.start()
+
+    try:
+        while True:
+            txt = q.get()
+            yield f"data: {txt}\n\n"
+    except GeneratorExit:
+        stop_event.set()
+        thr.join()
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -164,6 +191,21 @@ def translate_page() -> str:
         text = translate_audio_file(audio_path, src, dst, transcribe=(mode == 'transcribe'))
         return render_template('translate.html', text=text, src=src, dst=dst, mode=mode)
     return render_template('translate.html')
+
+
+@app.route('/translate_live')
+def translate_live_page() -> str:
+    """Show real time translation page."""
+    return render_template('translate_live.html')
+
+
+@app.route('/translate_stream')
+def translate_stream_route() -> Response:
+    """Return server-sent events with real time translation."""
+    src = request.args.get('src', 'pt')
+    dst = request.args.get('dst', 'en')
+    mode = request.args.get('mode', 'translate')
+    return Response(stream_translation(src, dst, mode), mimetype='text/event-stream')
 
 
 @app.route('/recognize', methods=['GET', 'POST'])
