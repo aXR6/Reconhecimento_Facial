@@ -23,7 +23,9 @@ def test_detections_route(monkeypatch):
 
 def test_recognize_api(monkeypatch, tmp_path):
     dummy = types.ModuleType("rec")
-    dummy.recognize_faces = lambda p: ["Bob"]
+    dummy.recognize_faces_with_analysis = lambda p: [
+        {"box": [0, 1, 2, 3], "name": "Bob", "analysis": {"gender": "m"}}
+    ]
     monkeypatch.setitem(sys.modules, "reconhecimento_facial.recognition", dummy)
     client = web.app.test_client()
     img = tmp_path / "img.jpg"
@@ -34,7 +36,8 @@ def test_recognize_api(monkeypatch, tmp_path):
             data={"image": (fh, "img.jpg")},
             content_type="multipart/form-data",
         )
-    assert resp.json == {"names": ["Bob"]}
+    assert resp.json["names"] == ["Bob"]
+    assert resp.json["faces"][0]["box"] == [0, 1, 2, 3]
 
 
 def test_webcam_page():

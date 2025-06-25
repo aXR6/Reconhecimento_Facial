@@ -232,10 +232,11 @@ def recognize_api():
         return {'error': 'no file'}, 400
     img_path = '/tmp/recognize.jpg'
     file.save(img_path)
-    from reconhecimento_facial.recognition import recognize_faces
+    from reconhecimento_facial.recognition import recognize_faces_with_analysis
 
-    names = recognize_faces(img_path)
-    return jsonify({'names': names})
+    faces = recognize_faces_with_analysis(img_path)
+    names = [f['name'] for f in faces]
+    return jsonify({'names': names, 'faces': faces})
 
 @app.route('/register_api', methods=['POST'])
 def register_api():
