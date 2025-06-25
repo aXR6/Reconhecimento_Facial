@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<p>Origem: <input type="text" id="src" value="pt"></p>
+<p>Destino: <input type="text" id="dst" value="en"></p>
+<p>
+    <label><input type="radio" name="mode" value="translate" checked> Traduzir</label>
+    <label><input type="radio" name="mode" value="transcribe"> Transcrever</label>
+</p>
+<button id="start">Iniciar</button>
+<pre id="out" style="white-space: pre-wrap"></pre>
+<script>
+let source;
+document.getElementById('start').onclick = () => {
+  if (source) {
+    source.close();
+    source = null;
+    document.getElementById('start').innerText = 'Iniciar';
+    return;
+  }
+  const src = document.getElementById('src').value;
+  const dst = document.getElementById('dst').value;
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  source = new EventSource(`/translate_stream?src=${src}&dst=${dst}&mode=${mode}`);
+  document.getElementById('start').innerText = 'Parar';
+  source.onmessage = e => {
+    const out = document.getElementById('out');
+    out.textContent += e.data + '\n';
+  };
+  source.onerror = () => {
+    if (source) source.close();
+    source = null;
+    document.getElementById('start').innerText = 'Iniciar';
+  };
+};
+</script>
+{% endblock %}
