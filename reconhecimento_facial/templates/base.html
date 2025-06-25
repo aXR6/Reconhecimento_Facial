@@ -3,12 +3,46 @@
 <head>
     <meta charset="utf-8">
     <title>Reconhecimento Facial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        nav summary { cursor: pointer; font-weight: bold; }
-        nav ul { list-style: none; padding-left: 1em; margin-top: 0; }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+        nav {
+            background: #333;
+            color: #fff;
+            padding: 0.5em;
+            border-radius: 5px;
+            margin-bottom: 1em;
+        }
+        nav a, nav summary {
+            color: #fff;
+            text-decoration: none;
+        }
+        nav summary {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style: none;
+            padding-left: 1em;
+            margin-top: 0;
+        }
         nav li { margin: 0.2em 0; }
-        nav { margin-bottom: 1em; }
+        button {
+            padding: 0.5em 1em;
+            background: #0069d9;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover { background: #0053ba; }
+        .error { color: red; }
     </style>
 </head>
 <body>
@@ -20,6 +54,7 @@
         <ul>
             <li><a href="/detect">Rostos</a></li>
             <li><a href="/obstruction">Obstrução</a></li>
+            <li><a href="/demographics">Demografia</a></li>
         </ul>
     </details>
     <details>
@@ -33,6 +68,7 @@
         <summary>Cadastrar pessoa (face_recognition)</summary>
         <ul>
             <li><a href="/register">Cadastrar</a></li>
+            <li><a href="/register_webcam">Webcam</a></li>
         </ul>
     </details>
     <details>
@@ -46,6 +82,8 @@
         <summary>Outros</summary>
         <ul>
             <li><a href="/caption">Legenda</a></li>
+            <li><a href="/translate">Tradução</a></li>
+            <li><a href="/preload">Precarregar modelos</a></li>
         </ul>
     </details>
 </nav>

@@ -41,3 +41,47 @@ def test_webcam_page():
     client = web.app.test_client()
     resp = client.get("/webcam")
     assert resp.status_code == 200
+
+
+def test_demographics_route(monkeypatch, tmp_path):
+    monkeypatch.setattr(web, "detect_demographics_lazy", lambda p: {"age": 30})
+    client = web.app.test_client()
+    img = tmp_path / "img.jpg"
+    img.write_bytes(b"data")
+    with img.open("rb") as fh:
+        resp = client.post(
+            "/demographics",
+            data={"image": (fh, "img.jpg")},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 200
+
+
+def test_translate_route(monkeypatch, tmp_path):
+    monkeypatch.setattr(web, "translate_audio_file", lambda p, s, d, transcribe=False: "ok")
+    client = web.app.test_client()
+    audio = tmp_path / "a.wav"
+    audio.write_bytes(b"a")
+    with audio.open("rb") as fh:
+        resp = client.post(
+            "/translate",
+            data={"audio": (fh, "a.wav"), "src": "pt", "dst": "en"},
+            content_type="multipart/form-data",
+        )
+    assert resp.status_code == 200
+
+
+def test_register_api(monkeypatch, tmp_path):
+    dummy = types.ModuleType("rec")
+    dummy.register_person_cli = lambda p, name: True
+    monkeypatch.setitem(sys.modules, "reconhecimento_facial.recognition", dummy)
+    client = web.app.test_client()
+    img = tmp_path / "img.jpg"
+    img.write_bytes(b"x")
+    with img.open("rb") as fh:
+        resp = client.post(
+            "/register_api",
+            data={"image": (fh, "img.jpg"), "name": "Bob"},
+            content_type="multipart/form-data",
+        )
+    assert resp.json == {"success": True}

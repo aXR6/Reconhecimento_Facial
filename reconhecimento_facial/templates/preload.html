@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post">
+    <button type="submit">Precarregar modelos</button>
+</form>
+{% if success %}<p>Modelos carregados.</p>{% endif %}
+{% endblock %}

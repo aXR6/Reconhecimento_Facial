@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+    <p>Imagem: <input type="file" name="image" required></p>
+    <button type="submit">Analisar</button>
+</form>
+{% if info %}
+<ul>
+{% for k, v in info.items() %}<li>{{ k }}: {{ v }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% endblock %}
