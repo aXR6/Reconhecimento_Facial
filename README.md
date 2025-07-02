@@ -127,6 +127,10 @@ Copie o arquivo `.env.example` para `.env` e ajuste conforme necessário. Todas 
 - `POSTGRES_DSN`: string de conexão do PostgreSQL usada por `db.py` (sem valor padrão).
 - `PHOTOS_DIR`: pasta onde ficam as fotos capturadas.
 
+### Graylog e permissoes de escrita
+Caso utilize um container que tambem execute o Graylog, defina a variavel `GRAYLOG_NODE_ID_FILE` para um caminho gravavel, como `/usr/share/graylog/data/config/node-id`. Se o Graylog tentar usar `/etc/graylog/server` sem permissao, o container reiniciara continuamente.
+
+
 ## Requisitos
 
 - Python 3
